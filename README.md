@@ -2,6 +2,10 @@
 
 3畳の畑＋ベランダで家庭菜園を始めるための、年間計画・作付けシミュレーション・栽培アドバイスの Web アプリ。
 
+### 👉 **https://keganokami.github.io/my-harvest/**
+
+スマートフォンでそのまま使えます（Safari で開く → 共有 → 「ホーム画面に追加」でアプリのように起動します）。
+
 **対象：栽培区分「中間地」／ 北摂丘陵・標高約200m の内陸を想定（平野部より1〜2℃低い前提で補正）**
 
 ---
@@ -104,29 +108,29 @@ python3 -m http.server 8000
 
 ---
 
-## GitHub Pages で公開する
+## 公開と更新（GitHub Pages）
+
+すでに **https://keganokami.github.io/my-harvest/** で公開済みです。
+`main` ブランチのルートをそのまま配信しています（`.nojekyll` を置いてあるので Jekyll の処理は走りません）。
+
+内容を変えたら、push するだけで 1〜2分後に反映されます。
 
 ```bash
-# 1. このディレクトリで初回コミット
+cd ~/my-harvest
 git add -A
-git commit -m "家庭菜園プランナー 初版"
-
-# 2. GitHub にリポジトリを作成して push
-#    （gh コマンドがある場合）
-gh repo create my-harvest --public --source=. --push
-
-#    （手動で作る場合）
-git remote add origin https://github.com/<ユーザー名>/my-harvest.git
-git branch -M main
-git push -u origin main
+git commit -m "変更内容"
+git push
 ```
 
-その後、GitHub のリポジトリページで
-**Settings → Pages → Build and deployment → Source: `Deploy from a branch` → Branch: `main` / `(root)`** を選んで Save。
+デプロイの状態は次で確認できます。
 
-1〜2分で `https://<ユーザー名>.github.io/my-harvest/` に公開されます。
+```bash
+gh api /repos/keganokami/my-harvest/pages --jq '.status'   # built なら公開済み
+```
 
-> `.nojekyll` を置いてあるので Jekyll の処理は走りません。スマホのホーム画面に追加すれば、畑やベランダでそのまま使えます。
+> 公開リポジトリなので、**個人が特定できる情報（住所・氏名・メールアドレス）を書き込まない**ようにしてください。
+> 気候の補正値は地名を出さずに「中間地・北摂丘陵・標高約200m」として持たせてあります（`js/core.js` の `SITE`）。
+> コミットの著者は `keganokami@users.noreply.github.com` に設定済みです（`git config user.email` で変更可）。
 
 ---
 
