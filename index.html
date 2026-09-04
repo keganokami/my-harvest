@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>my-harvest ｜ 家庭菜園プランナー（中間地・丘陵地）</title>
+<meta name="description" content="3畳の畑とベランダで始める家庭菜園。何を育てるか・どう育てるか・今どうすればよいかが分かるアプリ（中間地基準）">
+<meta name="theme-color" content="#4a7c3f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="my-harvest">
+<meta name="format-detection" content="telephone=no">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌱</text></svg>">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%234a7c3f'/><text y='.88em' x='8' font-size='78'>🌱</text></svg>">
+</head>
+<body>
+
+<header class="site">
+  <div class="inner">
+    <div class="hrow">
+      <h1>🌱 my-harvest</h1>
+      <div class="today" id="todayBadge">—</div>
+    </div>
+    <div class="sub" id="siteLine">栽培区分：中間地 ／ 北摂丘陵・標高約200m の想定</div>
+  </div>
+</header>
+
+<main>
+
+  <!-- ============ いま ============ -->
+  <section class="panel active" id="panel-now">
+    <div id="nowHead"></div>
+
+    <h2 class="sec">✅ 今週やること</h2>
+    <div id="nowTodo"></div>
+
+    <h2 class="sec">🌿 育てているもの</h2>
+    <div id="nowCrops"></div>
+
+    <h2 class="sec">🌱 いま植えられるもの</h2>
+    <p class="muted tight-top">
+      今まける・植えられる作型を、失敗しにくさと食費への貢献で並べています。タップすると育て方が開きます。
+    </p>
+    <div id="nowStart" class="grid c3"></div>
+
+    <details class="fold" id="foldMonth">
+      <summary>今月の作業・注意・買い物リスト</summary>
+      <div id="nowMonth"></div>
+    </details>
+
+    <details class="fold">
+      <summary>これから3ヶ月に始まるもの（準備リスト）</summary>
+      <div id="nowAhead"></div>
+    </details>
+  </section>
+
+  <!-- ============ 育てる ============ -->
+  <section class="panel" id="panel-grow">
+    <h2 class="sec">🌱 何を育てる？</h2>
+    <p class="muted tight-top">
+      条件で絞り込んで、育てたいものを選んでください。カードをタップすると「どう育てるか」が開きます。
+    </p>
+    <div class="filters" id="vegFilters"></div>
+    <div class="tiny" id="vegCount" style="margin:-4px 0 8px"></div>
+    <div id="vegList" class="grid c3"></div>
+
+    <details class="fold" id="foldCal">
+      <summary>年間カレンダー（全作型の早見表・横スクロール）</summary>
+      <div class="filters" id="calFilters"></div>
+      <div class="cal-legend" id="calLegend"></div>
+      <div class="cal-wrap"><table class="cal" id="calTable"></table></div>
+      <div class="tiny" style="margin-top:8px">
+        1マス＝旬（上旬・中旬・下旬）。オレンジの縦線が「今」です。行をタップすると詳細が開きます。
+      </div>
+    </details>
+  </section>
+
+  <!-- ============ プラン ============ -->
+  <section class="panel" id="panel-plan">
+    <h2 class="sec">🧮 作付けプラン</h2>
+    <p class="muted tight-top">
+      区画に作物を割り当てて、面積・栽培期間の重なり・連作障害・日照が成立するか検証します。
+    </p>
+
+    <div class="card">
+      <h3>① 敷地の設定</h3>
+      <div class="row">
+        <div class="field">
+          <label class="f">地植えの広さ</label>
+          <select id="simArea">
+            <option value="3.5">3畳（実作付け 約3.5m²）</option>
+            <option value="2.4">2畳（実作付け 約2.4m²）</option>
+            <option value="5.8">4畳半（実作付け 約5.8m²）</option>
+            <option value="0">地植えなし（ベランダのみ）</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="f">区画の数</label>
+          <select id="simBeds">
+            <option value="4" selected>4区画（輪作しやすい）</option>
+            <option value="2">2区画</option>
+            <option value="6">6区画（細かく管理）</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="f">プランターの数（65cm相当）</label>
+          <select id="simPlanters">
+            <option>0</option><option>1</option><option>2</option>
+            <option selected>3</option><option>4</option><option>6</option><option>8</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="f">ベランダの日照</label>
+          <select id="simSun">
+            <option value="full">6時間以上（果菜もOK）</option>
+            <option value="half" selected>3〜6時間（葉物・根菜向き）</option>
+            <option value="shade">3時間未満（半日陰向きのみ）</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>② 作付けを追加する</h3>
+      <div class="row">
+        <div class="field">
+          <label class="f">野菜</label>
+          <select id="simVeg"></select>
+        </div>
+        <div class="field">
+          <label class="f">作型（種から／苗から）</label>
+          <select id="simPlan"></select>
+        </div>
+        <div class="field">
+          <label class="f">場所</label>
+          <select id="simPlace"></select>
+        </div>
+        <div class="field">
+          <label class="f">株数</label>
+          <input type="number" id="simQty" value="1" min="1" max="200" inputmode="numeric">
+        </div>
+      </div>
+      <div class="row btnrow">
+        <button class="btn" id="simAdd">追加する</button>
+        <button class="btn ghost" id="simAuto">おまかせ年間プランを作る</button>
+      </div>
+      <div class="tiny" id="simHint"></div>
+    </div>
+
+    <div id="simBoard"></div>
+    <div id="simResult"></div>
+  </section>
+
+  <!-- ============ 記録 ============ -->
+  <section class="panel" id="panel-log">
+    <h2 class="sec">📒 わが家の記録</h2>
+    <p class="muted tight-top">
+      いまの状態と行った作業を記録すると、その内容から今すべきことを診断します。
+      収穫量を入れれば実績と金額も集計されます。データはこの端末の中だけに保存されます。
+    </p>
+
+    <details class="fold" id="foldAdd">
+      <summary>＋ 栽培を登録する</summary>
+      <div class="row">
+        <div class="field">
+          <label class="f">野菜</label>
+          <select id="logVeg"></select>
+        </div>
+        <div class="field">
+          <label class="f">作型</label>
+          <select id="logPlan"></select>
+        </div>
+        <div class="field">
+          <label class="f">種まき／植付けをした日</label>
+          <input type="date" id="logDate">
+        </div>
+        <div class="field">
+          <label class="f">株数</label>
+          <input type="number" id="logQty" value="1" min="1" max="500" inputmode="numeric">
+        </div>
+        <div class="field">
+          <label class="f">場所</label>
+          <select id="logPlace">
+            <option value="plot">地植え</option>
+            <option value="planter">プランター</option>
+          </select>
+        </div>
+      </div>
+      <div class="row btnrow"><button class="btn" id="logAdd">登録する</button></div>
+    </details>
+
+    <div id="logList"></div>
+    <div class="card" id="logHarvest"></div>
+  </section>
+
+  <!-- ============ 調べる ============ -->
+  <section class="panel" id="panel-learn">
+    <h2 class="sec">🩺 症状から調べる</h2>
+    <p class="muted tight-top">
+      当てはまる症状をタップすると、考えられる原因と対処法が出ます。
+    </p>
+    <div class="filters" id="docFilters"></div>
+    <div id="docList"></div>
+
+    <h2 class="sec">📚 基礎知識</h2>
+    <div id="guideList"></div>
+
+    <details class="fold">
+      <summary>科ごとの連作・輪作一覧</summary>
+      <div class="table-wrap"><table class="data" id="familyTable"></table></div>
+    </details>
+    <details class="fold">
+      <summary>初期費用の目安</summary>
+      <div class="table-wrap"><table class="data" id="costTable"></table></div>
+    </details>
+  </section>
+
+</main>
+
+<nav class="tabs" id="tabbar">
+  <button data-tab="now" class="active"><span class="ti">📍</span><span class="tl">いま</span></button>
+  <button data-tab="grow"><span class="ti">🌱</span><span class="tl">育てる</span></button>
+  <button data-tab="plan"><span class="ti">🧮</span><span class="tl">プラン</span></button>
+  <button data-tab="log"><span class="ti">📒</span><span class="tl">記録</span></button>
+  <button data-tab="learn"><span class="ti">🔎</span><span class="tl">調べる</span></button>
+</nav>
+
+<div class="modal-bg" id="modalBg" hidden>
+  <div class="modal" id="modal"></div>
+</div>
+
+<footer class="site">
+  my-harvest — 家庭菜園プランナー（中間地・北摂丘陵・標高約200m 想定）<br>
+  日付は中間地（近畿平地）の一般的な作型に基づく目安です。その年の天候・種袋の記載・品種に合わせて調整してください。
+</footer>
+
+<script src="js/core.js"></script>
+<script src="data/veg-leaf.js"></script>
+<script src="data/veg-root.js"></script>
+<script src="data/veg-fruit.js"></script>
+<script src="data/veg-allium.js"></script>
+<script src="data/knowledge.js"></script>
+<script src="js/calendar.js"></script>
+<script src="js/advisor.js"></script>
+<script src="js/journal.js"></script>
+<script src="js/simulator.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
