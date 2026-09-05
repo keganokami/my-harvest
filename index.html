@@ -80,27 +80,48 @@
   <section class="panel" id="panel-plan">
     <h2 class="sec">🧮 作付けプラン</h2>
     <p class="muted tight-top">
-      区画に作物を割り当てて、面積・栽培期間の重なり・連作障害・日照が成立するか検証します。
+      敷地の寸法から畝の本数と長さを割り出し、「株間 × 条数」で畝を何cm使うかを計算して、
+      作付けが成立するか（畝の長さ・栽培期間の重なり・連作障害・日照）を検証します。
     </p>
 
     <div class="card">
-      <h3>① 敷地の設定</h3>
+      <h3>① 敷地と畝の設定</h3>
       <div class="row">
         <div class="field">
-          <label class="f">地植えの広さ</label>
-          <select id="simArea">
-            <option value="3.5">3畳（実作付け 約3.5m²）</option>
-            <option value="2.4">2畳（実作付け 約2.4m²）</option>
-            <option value="5.8">4畳半（実作付け 約5.8m²）</option>
-            <option value="0">地植えなし（ベランダのみ）</option>
+          <label class="f">敷地の幅（cm）</label>
+          <select id="simPlotW">
+            <option value="90">90cm（1畳の短辺）</option>
+            <option value="120">120cm</option>
+            <option value="180" selected>180cm（3畳の短辺）</option>
+            <option value="270">270cm</option>
+            <option value="360">360cm</option>
           </select>
         </div>
         <div class="field">
-          <label class="f">区画の数</label>
-          <select id="simBeds">
-            <option value="4" selected>4区画（輪作しやすい）</option>
-            <option value="2">2区画</option>
-            <option value="6">6区画（細かく管理）</option>
+          <label class="f">敷地の奥行き（cm）</label>
+          <select id="simPlotD">
+            <option value="180">180cm</option>
+            <option value="200">200cm</option>
+            <option value="270" selected>270cm（3畳の長辺）</option>
+            <option value="360">360cm</option>
+            <option value="450">450cm</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="f">畝の幅（cm）</label>
+          <select id="simBedW">
+            <option value="60">60cm（葉物・根菜向き）</option>
+            <option value="70" selected>70cm（標準）</option>
+            <option value="90">90cm（果菜の2条植え）</option>
+            <option value="120">120cm（幅広）</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="f">通路の幅（cm）</label>
+          <select id="simPathW">
+            <option value="30">30cm（最小限）</option>
+            <option value="40" selected>40cm（標準）</option>
+            <option value="50">50cm（作業しやすい）</option>
           </select>
         </div>
         <div class="field">
@@ -119,6 +140,7 @@
           </select>
         </div>
       </div>
+      <div id="simLayout" style="margin-top:6px"></div>
     </div>
 
     <div class="card">

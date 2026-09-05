@@ -121,8 +121,22 @@ function boot() {
   APP.today = new Date();
   APP.nowDek = dateToDek(APP.today);
   APP.crops = Store.get('crops', []).map(ensureCropShape);   // 旧形式の記録も読めるよう整形
-  APP.sim = Store.get('sim', { areaM2: 3.5, beds: 4, planters: 3, sun: 'half', items: [] });
-  if (!APP.sim.items) APP.sim.items = [];
+  APP.sim = Store.get('sim', null) || {};
+  // 旧形式（区画ベース）からの移行と既定値
+  if (APP.sim.plotW === undefined) {
+    APP.sim.plotW = 180; APP.sim.plotD = 270;
+    APP.sim.bedW = 70; APP.sim.pathW = 40;
+    if (APP.sim.beds !== undefined) APP.sim.items = [];   // 区画割りは畝に引き継げないので破棄
+  }
+  if (APP.sim.planters === undefined) APP.sim.planters = 3;
+  if (!APP.sim.sun) APP.sim.sun = 'half';
+  if (!Array.isArray(APP.sim.items)) APP.sim.items = [];
+  delete APP.sim.areaM2; delete APP.sim.beds;
+  {
+    const lay = bedLayout(APP.sim);
+    APP.sim.items = APP.sim.items.filter(it =>
+      it.place === 'planter' || parseInt(it.place.slice(3), 10) < lay.count);
+  }
 
   const [m, j] = undek(APP.nowDek);
   document.getElementById('todayBadge').textContent =

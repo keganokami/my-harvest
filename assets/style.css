@@ -372,6 +372,34 @@ table.data td.num, table.data th.num { text-align: right; font-variant-numeric: 
 }
 .slot.conflict { background: var(--red-light); border: 1px solid var(--red); }
 
+/* ---------- 畝の平面図 ---------- */
+.bedmap {
+  background: var(--bg-card); border: 1px solid var(--line);
+  border-radius: 10px; padding: 11px 12px; margin-bottom: 10px;
+}
+.bm-head { font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+.bm-head .tiny { font-weight: 400; }
+.bm-bar {
+  display: flex; height: 32px; border-radius: 6px; overflow: hidden;
+  border: 1px solid var(--line); background: var(--bg-sub);
+}
+.bm-seg {
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; color: #fff; min-width: 14px; overflow: hidden;
+  border-right: 1px solid rgba(255,255,255,.35);
+}
+.bm-rest, .bm-empty {
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10.5px; color: var(--fg-faint); flex: 1 1 auto;
+  background: repeating-linear-gradient(45deg, transparent, transparent 5px, var(--line) 5px, var(--line) 6px);
+}
+.bm-legend {
+  display: flex; flex-wrap: wrap; gap: 3px 12px; margin-top: 6px;
+  font-size: 11px; color: var(--fg-mute);
+}
+.bm-legend span { display: flex; align-items: center; gap: 5px; }
+.bm-legend i { width: 11px; height: 11px; border-radius: 3px; display: block; flex: 0 0 auto; }
+
 /* ---------- 栽培カード ---------- */
 .crop-row {
   display: flex; gap: 10px; align-items: flex-start; padding: 11px 0;
