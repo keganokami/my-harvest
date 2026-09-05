@@ -124,6 +124,7 @@ function renderCalendar() {
   t.innerHTML = h;
   t.querySelectorAll('tbody tr').forEach(tr => {
     tr.style.cursor = 'pointer';
+    tr.setAttribute('role', 'button');
     tr.onclick = () => openVeg(tr.dataset.veg);
   });
 }
@@ -156,6 +157,8 @@ function renderVegList() {
     if (vegFilter.now && startable.length === 0) return;
     n++;
     const c = el('div', 'veg-card');
+    c.setAttribute('role', 'button');
+    c.setAttribute('tabindex', '0');
     c.innerHTML =
       (startable.length ? '<div class="badge-now">いま植え時</div>' : '') +
       `<div class="vh"><span class="emoji">${v.emoji}</span><span class="vname">${esc(v.name)}</span></div>` +
@@ -182,7 +185,7 @@ function openVeg(id) {
   const now = APP.nowDek;
   const fam = FAMILY_INFO[v.family] || {};
 
-  let h = `<button class="close" id="mClose">×</button>`;
+  let h = `<div class="modal-head"><button class="close" id="mClose" aria-label="閉じる">×</button></div>`;
   h += `<h2>${v.emoji} ${esc(v.name)}</h2>`;
   h += `<div class="muted" style="margin-bottom:10px">${esc(v.summary)}</div>`;
 

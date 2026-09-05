@@ -144,6 +144,16 @@ function boot() {
   renderDoctor();
   renderGuide();
 
+  // <summary> の開閉が効かない環境（一部の iOS Safari）への保険。
+  // ネイティブで開閉できた場合は何もしない。
+  document.querySelectorAll('details.fold > summary').forEach(sm => {
+    sm.addEventListener('click', () => {
+      const d = sm.parentElement;
+      const before = d.open;
+      setTimeout(() => { if (d.open === before) d.open = !before; }, 0);
+    });
+  });
+
   // 年間カレンダーは開いたときに初めて描画する（スマホでの初期表示を軽くするため）
   const foldCal = document.getElementById('foldCal');
   if (foldCal) foldCal.addEventListener('toggle', () => { if (foldCal.open) renderCalendar(); });

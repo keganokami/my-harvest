@@ -199,18 +199,21 @@ details.fold {
   background: var(--bg-card); border: 1px solid var(--line);
   border-radius: var(--radius); margin: 12px 0; overflow: hidden;
 }
+/* summary に display:flex を当てると iOS Safari で開閉が効かなくなるため、
+   list-item のまま marker だけ消し、＋/− は疑似要素を絶対配置で置く */
 details.fold > summary {
-  cursor: pointer; padding: 14px; font-size: 13.5px; font-weight: 600;
-  list-style: none; display: flex; align-items: center; justify-content: space-between;
-  gap: 8px; min-height: 48px;
+  cursor: pointer; padding: 15px 42px 15px 14px; font-size: 13.5px; font-weight: 600;
+  display: list-item; list-style: none; position: relative; min-height: 50px;
 }
+details.fold > summary::marker { content: ''; }
 details.fold > summary::-webkit-details-marker { display: none; }
 details.fold > summary::after {
-  content: '＋'; color: var(--fg-faint); font-size: 15px; flex: 0 0 auto;
+  content: '＋'; color: var(--fg-faint); font-size: 16px;
+  position: absolute; right: 15px; top: 50%; transform: translateY(-50%);
 }
 details.fold[open] > summary::after { content: '−'; }
 details.fold[open] > summary { border-bottom: 1px solid var(--line); }
-details.fold > *:not(summary) { padding: 0 14px 14px; }
+details.fold > *:not(summary) { padding: 2px 14px 14px; }
 details.fold > .table-wrap { margin: 14px; padding: 0; }
 
 /* ---------- 今週やること ---------- */
@@ -311,12 +314,20 @@ body.modal-open { overflow: hidden; }
   padding: 16px 15px calc(var(--safe-b) + 40px);
   position: relative;
 }
-.modal .close {
-  position: sticky; top: 8px; float: right; z-index: 5;
-  background: var(--bg-sub); border: 1px solid var(--line);
-  width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 19px;
-  color: var(--fg-mute); line-height: 1; font-family: inherit;
+.modal-head {
+  position: sticky; top: 0; z-index: 6;
+  display: flex; justify-content: flex-end;
+  margin: -16px -15px 2px; padding: 10px 13px 6px;
+  background: var(--bg-card);
+  border-bottom: 1px solid transparent;
 }
+.modal .close {
+  background: var(--bg-sub); border: 1px solid var(--line);
+  width: 44px; height: 44px; border-radius: 50%; cursor: pointer; font-size: 20px;
+  color: var(--fg-mute); line-height: 1; font-family: inherit;
+  display: flex; align-items: center; justify-content: center; padding: 0;
+}
+.modal .close:active { background: var(--line); }
 .modal h2 { margin: 0 0 4px; font-size: 19px; display: flex; align-items: center; gap: 8px; }
 
 /* ---------- 作型ボックス ---------- */
@@ -431,11 +442,17 @@ table.data td.num, table.data th.num { text-align: right; font-variant-numeric: 
 .filters .fg::-webkit-scrollbar { display: none; }
 .filters .fg > .muted { flex: 0 0 auto; }
 .chip {
-  font-size: 12.5px; padding: 6px 12px; border-radius: 999px; cursor: pointer;
+  font-size: 13px; padding: 9px 14px; border-radius: 999px; cursor: pointer;
   border: 1px solid var(--line); background: var(--bg-card); color: var(--fg-mute);
-  font-family: inherit; flex: 0 0 auto; min-height: 32px;
+  font-family: inherit; flex: 0 0 auto; min-height: 42px;
+  display: inline-flex; align-items: center;
 }
+.chip:active { background: var(--bg-sub); }
 .chip.on { background: var(--green); color: #fff; border-color: var(--green); }
+
+/* div をボタンとして使っている箇所（iOS でのタップ判定を確実にする） */
+[role="button"] { cursor: pointer; -webkit-user-select: none; user-select: none; }
+[role="button"]:active { opacity: .7; }
 
 .empty { text-align: center; padding: 28px 14px; color: var(--fg-faint); font-size: 13px; }
 
@@ -500,7 +517,8 @@ footer.site {
 
   .modal-bg { display: flex; align-items: flex-start; justify-content: center; padding: 24px 12px; }
   .modal { min-height: 0; max-width: 760px; width: 100%; border-radius: 14px; padding: 24px 26px 30px; box-shadow: 0 20px 60px rgba(0,0,0,.3); }
-  .modal .close { position: absolute; top: 12px; right: 14px; float: none; width: 32px; height: 32px; font-size: 17px; }
+  .modal-head { margin: -24px -26px 2px; padding: 14px 18px 8px; }
+  .modal .close { width: 36px; height: 36px; font-size: 18px; }
 
   table.cal { font-size: 12px; min-width: 900px; }
   table.cal thead th { position: sticky; top: 0; z-index: 2; }

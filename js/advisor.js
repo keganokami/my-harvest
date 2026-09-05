@@ -66,72 +66,113 @@ function toggleTodo(text) {
 
 function weeklyTodos() {
   const now = APP.nowDek;
-  const out = [];
+  const mine = [];        // 育てているものへの作業
+  const suggest = [];     // まだ手を付けていない、適期が近い野菜
 
-  /* 育てているものへの作業 */
   APP.crops.filter(c => !c.ended).forEach(c => {
     const d = diagnose(c);
     if (!d.v) return;
     d.msgs.filter(m => m.level === 'red' || m.level === 'blue').slice(0, 3).forEach(m => {
-      out.push({ u: m.level === 'red' ? 0 : 1, veg: d.v, text: `${d.v.name}：${m.title}`, detail: m.body });
+      mine.push({ u: m.level === 'red' ? 0 : 1, cropId: c.id, veg: d.v,
+        text: `${d.v.name}：${m.title}`, detail: m.body });
     });
   });
 
-  /* 適期の終わりが近い種まき・植付け */
   const seen = {};
   startableNow(0).forEach(x => {
     const st = startStep(x.p);
     const end = dek(st.to[0], st.to[1]);
     const left = dekDistance(now, end);
-    if (left > 3) return;                      // 1ヶ月以上余裕があるものは急がない
+    if (left > 3) return;                                   // 1ヶ月以上余裕があるものは急がない
     if (seen[x.v.id]) return; seen[x.v.id] = 1;
-    const growing = APP.crops.some(c => c.vegId === x.v.id && !c.ended);
-    if (growing) return;                       // すでに育てているものは出さない
-    out.push({
+    if (APP.crops.some(c => c.vegId === x.v.id && !c.ended)) return;   // すでに育てている
+    suggest.push({
       u: left <= 1 ? 0 : 2, veg: x.v, vegId: x.v.id,
       text: `${x.v.name}の${st.label}は${dekLabel(end)}まで`,
       detail: `${x.p.label}／適期の終わりまであと約${Math.round((left + 1) * DEK_DAYS)}日。${esc(x.v.summary)}`
     });
   });
 
-  /* 今月の買い物 */
   const [m] = undek(now);
   const mt = MONTH_TASKS[m - 1];
-  if (mt.buy && mt.buy.length) {
-    out.push({ u: 2, text: `買っておくもの：${mt.buy.join('、')}`, detail: `${m}月に必要になります。人気の苗と種は売り切れます。` });
-  }
+  const shopping = (mt.buy && mt.buy.length)
+    ? { u: 2, text: `買っておくもの：${mt.buy.join('、')}`,
+        detail: `${m}月に必要になります。人気の苗と種は売り切れます。` }
+    : null;
 
-  out.sort((a, b) => a.u - b.u);
-  return out.slice(0, 12);
+  mine.sort((a, b) => a.u - b.u);
+  suggest.sort((a, b) => a.u - b.u);
+  return { mine, suggest, shopping };
+}
+
+function todoHtml(t, i) {
+  const done = todoDone(t.text);
+  return `<div class="todo u${t.u}${done ? ' done' : ''}" data-i="${i}">
+    <button class="tk" data-todo="${esc(t.text)}" aria-label="完了にする">✓</button>
+    <div class="tb"${t.vegId ? ' role="button" tabindex="0"' : ''}>
+      <div class="tt">${esc(t.text)}</div>
+      <div class="td">${t.detail}</div>
+    </div>
+  </div>`;
+}
+
+function bindTodos(root, list) {
+  root.querySelectorAll('[data-todo]').forEach(b => {
+    b.onclick = ev => { ev.stopPropagation(); toggleTodo(b.dataset.todo); renderTodos(); };
+  });
+  root.querySelectorAll('.todo').forEach(node => {
+    const t = list[+node.dataset.i];
+    if (!t) return;
+    const tb = node.querySelector('.tb');
+    if (!tb) return;
+    if (t.vegId) tb.onclick = () => openVeg(t.vegId);
+    else if (t.cropId) tb.onclick = () => goTab('log');
+  });
 }
 
 function renderTodos() {
   const box = document.getElementById('nowTodo');
-  const list = weeklyTodos();
-  if (!list.length) {
-    box.innerHTML = '<div class="empty">今すぐ急いでやることはありません。<br>「育てる」タブから次に植えるものを選んでみてください。</div>';
-    return;
-  }
+  const { mine, suggest, shopping } = weeklyTodos();
+  const growing = APP.crops.some(c => !c.ended);
+
   let h = '';
-  list.forEach((t, i) => {
-    const done = todoDone(t.text);
-    h += `<div class="todo u${t.u}${done ? ' done' : ''}" data-i="${i}">
-      <button class="tk" data-todo="${esc(t.text)}" aria-label="完了にする">✓</button>
-      <div class="tb">
-        <div class="tt">${esc(t.text)}</div>
-        <div class="td">${t.detail}</div>
-      </div>
-    </div>`;
-  });
+  // 育てているものがあるときは、その作業だけを主役にする
+  const main = growing ? mine : suggest;
+  const rest = growing ? suggest : [];
+
+  if (main.length) {
+    h += main.map(todoHtml).join('');
+  } else if (growing) {
+    h += `<div class="note green" style="margin-top:0"><strong>今週やるべき急ぎの作業はありません</strong>
+      育てているものは順調です。水やりだけ気にかけてください。</div>`;
+  } else {
+    h += '<div class="empty">今すぐ急いでやることはありません。<br>「育てる」タブから次に植えるものを選んでみてください。</div>';
+  }
   box.innerHTML = h;
-  box.querySelectorAll('[data-todo]').forEach(b => {
-    b.onclick = () => { toggleTodo(b.dataset.todo); renderTodos(); };
-  });
-  box.querySelectorAll('.todo').forEach((el2, i) => {
-    const t = list[i];
-    if (!t.vegId) return;
-    el2.querySelector('.tb').onclick = () => openVeg(t.vegId);
-    el2.querySelector('.tb').style.cursor = 'pointer';
+  bindTodos(box, main);
+
+  // それ以外（未着手の適期・買い物）は折りたたみに退避
+  const sub = document.getElementById('nowTodoMore');
+  if (!sub) return;
+  const items = rest.concat(shopping && growing ? [shopping] : []);
+  if (!growing && shopping) items.push(shopping);
+  if (!items.length) { sub.innerHTML = ''; sub.hidden = true; return; }
+  sub.hidden = false;
+  const label = rest.length
+    ? `ほかに今が適期のもの ${rest.length}件${shopping ? ' ・ 今月の買い物' : ''}`
+    : '今月の買い物リスト';
+  sub.innerHTML = `<details class="fold">
+    <summary>${esc(label)}</summary>
+    <div id="nowTodoMoreBody"></div>
+  </details>`;
+  const body = document.getElementById('nowTodoMoreBody');
+  body.innerHTML = items.map((t, i) => todoHtml(t, i)).join('');
+  bindTodos(body, items);
+  // 動的に足した折りたたみにも開閉フォールバックを付ける
+  const sm = sub.querySelector('summary');
+  if (sm) sm.addEventListener('click', () => {
+    const d = sm.parentElement, before = d.open;
+    setTimeout(() => { if (d.open === before) d.open = !before; }, 0);
   });
 }
 
@@ -214,6 +255,7 @@ function renderNow() {
   ae.innerHTML = ah;
   ae.querySelectorAll('tr[data-veg]').forEach(tr => {
     tr.style.cursor = 'pointer';
+    tr.setAttribute('role', 'button');
     tr.onclick = () => openVeg(tr.dataset.veg);
   });
 }
@@ -260,7 +302,7 @@ function renderCropAdvice() {
     const d = diagnose(c);
     if (!d.v) return;
     const top = d.msgs.filter(m => m.level === 'red')[0] || d.msgs[0];
-    h += `<div class="crop-row" data-crop="${c.id}" style="cursor:pointer">
+    h += `<div class="crop-row" data-crop="${c.id}" role="button" tabindex="0" style="cursor:pointer">
       <div class="cicon">${d.v.emoji}</div>
       <div class="cbody">
         <div class="ctitle">${esc(d.v.name)}
