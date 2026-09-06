@@ -49,8 +49,12 @@ for f in index.html js/app.js js/simulator.js assets/style.css; do
   fi
 done
 
+echo ""
 if [ "$OK" = "1" ]; then
-  echo ""
-  echo "  $BASE/ に反映されました（build $STAMP）"
+  # 変数のあとに全角文字が続くと bash が変数名の一部と解釈するため、必ず ${} で囲む
+  echo "  ${BASE}/ に反映されました（build ${STAMP}）"
   echo "  スマホで古い画面が出るときは、フッターの build 表示を確認してください。"
+else
+  echo "  一部のファイルがまだ古いままです。数分後に再確認してください。"
+  exit 1
 fi
