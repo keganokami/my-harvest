@@ -5,7 +5,6 @@
    「株間 × 条数」で畝を何cm使うかを計算して作付けを検証する。
    ========================================================= */
 
-const PLANTER_M2 = 0.16;   // 65cmプランター1つの実効面積
 const SEED_COST = { seed: 300, seedling: 180, bulb: 70, tuber: 110, slip: 55, root: 320 };
 const BED_MARGIN = 20;     // 畝の両肩に空ける余裕（左右10cmずつ）
 
@@ -60,16 +59,10 @@ function qtyForLength(v, len, bedW) {
   return Math.max(0, rows * Math.floor(len / v.spacing.plant));
 }
 
-/** 65cmプランター1つあたりの株数 */
-function plantsPerPlanter(v) {
-  return Math.max(1, Math.round(v.perM2 * PLANTER_M2));
-}
-
 /** 1株あたりの金額換算 */
 function valuePerPlant(v) {
   const u = v.valueUnit;
   if (/1m²/.test(u)) return Math.round(v.marketValue / v.perM2);
-  if (/プランター/.test(u)) return Math.round(v.marketValue / plantsPerPlanter(v));
   return v.marketValue; // 1株 / 苗1本 など
 }
 
@@ -114,13 +107,11 @@ function simSaveAndRender() {
 
 function initSimForm() {
   const s = APP.sim;
-  const ids = ['simPlotW', 'simPlotD', 'simBedW', 'simPathW', 'simPlanters', 'simSun'];
+  const ids = ['simPlotW', 'simPlotD', 'simBedW', 'simPathW'];
   document.getElementById('simPlotW').value = String(s.plotW);
   document.getElementById('simPlotD').value = String(s.plotD);
   document.getElementById('simBedW').value = String(s.bedW);
   document.getElementById('simPathW').value = String(s.pathW);
-  document.getElementById('simPlanters').value = String(s.planters);
-  document.getElementById('simSun').value = s.sun;
 
   ids.forEach(id => {
     document.getElementById(id).onchange = () => {
@@ -128,11 +119,9 @@ function initSimForm() {
       s.plotD = parseInt(document.getElementById('simPlotD').value, 10) || 0;
       s.bedW = parseInt(document.getElementById('simBedW').value, 10) || 70;
       s.pathW = parseInt(document.getElementById('simPathW').value, 10) || 40;
-      s.planters = parseInt(document.getElementById('simPlanters').value, 10) || 0;
-      s.sun = document.getElementById('simSun').value;
       // 無くなった畝の割り当てを整理
       const lay = bedLayout(s);
-      s.items = s.items.filter(it => it.place === 'planter' || parseInt(it.place.slice(3), 10) < lay.count);
+      s.items = s.items.filter(it => parseInt(it.place.slice(3), 10) < lay.count);
       fillSimPlace();
       simSaveAndRender();
     };
@@ -170,8 +159,7 @@ function fillSimPlace() {
   const lay = bedLayout(APP.sim);
   let h = '';
   for (let i = 0; i < lay.count; i++) h += `<option value="bed${i}">畝${i + 1}（幅${lay.bedW}cm × 長さ${lay.len}cm）</option>`;
-  if (APP.sim.planters > 0) h += '<option value="planter">ベランダのプランター</option>';
-  sel.innerHTML = h || '<option value="planter">ベランダのプランター</option>';
+  sel.innerHTML = h || '<option value="">（畝がありません）</option>';
 }
 
 function updateSimHint() {
@@ -183,21 +171,13 @@ function updateSimHint() {
   const [a, b] = planOccupy(p);
 
   let hint = `占有期間：<b>${dekLabel(a)}〜${dekLabel(b)}</b>（約${Math.round(rangeLen(a, b) * DEK_DAYS)}日）`;
-  let cap;
-  if (place === 'planter') {
-    cap = plantsPerPlanter(v) * s.planters;
-    hint += `<br>65cmプランター1つあたり <b>${plantsPerPlanter(v)}株</b>（株間${v.spacing.plant}cm）／ 保有${s.planters}個で最大${cap}株`;
-  } else {
-    const rows = rowsInBed(v, lay.bedW);
-    cap = qtyForLength(v, lay.len, lay.bedW);
-    hint += `<br>畝幅${lay.bedW}cmに <b>${rows}条</b>（条間${v.spacing.row}cm）／ 株間${v.spacing.plant}cm`
-          + `<br>畝1本（${lay.len}cm）を使い切ると <b>${cap}株</b>`;
-  }
+  const rows = rowsInBed(v, lay.bedW);
+  const cap = qtyForLength(v, lay.len, lay.bedW);
+  hint += `<br>畝幅${lay.bedW}cmに <b>${rows}条</b>（条間${v.spacing.row}cm）／ 株間${v.spacing.plant}cm`
+        + `<br>畝1本（${lay.len}cm）を使い切ると <b>${cap}株</b>`;
   document.getElementById('simQty').value = Math.max(1, Math.min(cap, capQty(v, cap)));
   const qty = parseInt(document.getElementById('simQty').value, 10) || 1;
-  if (place !== 'planter') {
-    hint += ` ／ この株数なら畝の <b>${bedLengthFor(v, qty, lay.bedW)}cm</b> を使います`;
-  }
+  hint += ` ／ この株数なら畝の <b>${bedLengthFor(v, qty, lay.bedW)}cm</b> を使います`;
   document.getElementById('simHint').innerHTML = hint;
 }
 
@@ -210,8 +190,6 @@ function presetSim(vegId) {
 /* ---------------------------------------------------------
    検証
    --------------------------------------------------------- */
-const SUN_RANK = { shade: 0, half: 1, full: 2 };
-
 function validateSim() {
   const s = APP.sim;
   const lay = bedLayout(s);
@@ -266,37 +244,6 @@ function validateSim() {
     }
   }
 
-  // --- プランター ---
-  const pl = s.items.filter(it => it.place === 'planter');
-  pl.forEach(it => {
-    const v = byId(it.vegId);
-    if (SUN_RANK[v.sun] > SUN_RANK[s.sun]) {
-      warns.push({ level: 'error', place: 'ベランダ',
-        msg: `${v.name}は${v.sun === 'full' ? '日なた（1日6時間以上）' : '半日陰以上'}が必要ですが、設定した日照は${s.sun === 'full' ? '6時間以上' : s.sun === 'half' ? '3〜6時間' : '3時間未満'}です。徒長して収穫できない可能性が高いです。` });
-    }
-    if (v.depth > 30) {
-      warns.push({ level: 'info', place: 'ベランダ',
-        msg: `${v.name}は深さ${v.depth}cm以上の容器が必要です。標準プランター（深さ18cm前後）では不足します。` });
-    }
-  });
-
-  let peak = 0, peakDek = 0;
-  for (let d = 0; d < 36; d++) {
-    let u = 0;
-    pl.forEach(it => {
-      const v = byId(it.vegId);
-      const p = v.plans.find(x => x.id === it.planId);
-      if (!p) return;
-      const [a, e] = planOccupy(p);
-      if (inRange(d, a, e)) u += it.qty / plantsPerPlanter(v);
-    });
-    if (u > peak) { peak = u; peakDek = d; }
-  }
-  if (peak > s.planters + 0.02) {
-    warns.push({ level: 'error', place: 'ベランダ',
-      msg: `${dekLabel(peakDek)}にプランターが不足します（必要 約${Math.ceil(peak)}個 / 保有 ${s.planters}個）。株数を減らすか、時期をずらしてください。` });
-  }
-
   return warns;
 }
 
@@ -346,7 +293,6 @@ function autoPlan() {
     VEG_DB.forEach(v => {
       if (usedVeg[v.id]) return;
       if (!v.place.includes(opts.place)) return;
-      if (opts.sunLimit && SUN_RANK[v.sun] > SUN_RANK[opts.sunLimit]) return;
       if (opts.maxDepth && v.depth > opts.maxDepth) return;
       if (opts.skipShade && v.sun === 'shade') return;
       if (opts.famUsed && FAMILY_INFO[v.family] && FAMILY_INFO[v.family].rest > 1
@@ -398,18 +344,6 @@ function autoPlan() {
       added++;
       scanFrom = now;
     }
-  }
-
-  // --- ベランダ（制約が厳しいので先に確保する） ---
-  if (s.planters > 0) {
-    fill({
-      place: 'planter', cap: s.planters, threshold: 1, maxItems: 10,
-      pick: {
-        place: 'planter', sunLimit: s.sun, maxDepth: 35,
-        qtyOf: v => plantsPerPlanter(v),
-        amountOf: () => 1
-      }
-    });
   }
 
   // --- 畝 ---
@@ -470,23 +404,6 @@ function renderSim() {
         <span>${v.emoji} <b>${esc(v.name)}</b> ${it.qty}株<br>
         <span class="tiny">${rows}条 × ${Math.ceil(it.qty / rows)}株（株間${v.spacing.plant}cm）＝ 畝の${len}cm<br>
         ${esc(p.label)}／${dekLabel(a)}〜${dekLabel(e)}</span></span>
-        <button class="sx" data-rm="${s.items.indexOf(it)}" aria-label="削除">×</button></div>`;
-    });
-    h += '</div>';
-  }
-  if (s.planters > 0) {
-    const items = s.items.filter(it => it.place === 'planter');
-    h += `<div class="bed" style="border-style:solid"><h4>ベランダ</h4>
-      <div class="bmeta">65cmプランター ${s.planters}個 ／ 日照 ${s.sun === 'full' ? '6時間以上' : s.sun === 'half' ? '3〜6時間' : '3時間未満'}</div>`;
-    if (!items.length) h += '<div class="tiny">（空き）</div>';
-    items.forEach(it => {
-      const v = byId(it.vegId);
-      const p = v.plans.find(x => x.id === it.planId);
-      const [a, e] = planOccupy(p);
-      const bad = warns.some(w => w.level === 'error' && w.place === 'ベランダ' && w.msg.includes(v.name));
-      h += `<div class="slot${bad ? ' conflict' : ''}">
-        <span>${v.emoji} <b>${esc(v.name)}</b> ${it.qty}株<br>
-        <span class="tiny">プランター${(it.qty / plantsPerPlanter(v)).toFixed(1)}個分／${esc(p.label)}／${dekLabel(a)}〜${dekLabel(e)}</span></span>
         <button class="sx" data-rm="${s.items.indexOf(it)}" aria-label="削除">×</button></div>`;
     });
     h += '</div>';
@@ -557,7 +474,6 @@ function renderSim() {
 
   const lanes = [];
   for (let b = 0; b < lay.count; b++) lanes.push({ key: 'bed' + b, label: '畝' + (b + 1) });
-  if (s.planters > 0) lanes.push({ key: 'planter', label: 'ベランダ' });
 
   lanes.forEach(lane => {
     const items = s.items.filter(it => it.place === lane.key);
@@ -608,11 +524,8 @@ function renderSim() {
 
   r += '<div class="table-wrap"><table class="data"><thead><tr><th>場所</th><th>野菜</th><th class="hide-sm">作型</th><th class="num">株数</th><th class="num">畝の使用</th><th class="hide-sm">収穫期</th><th class="num">金額換算</th></tr></thead><tbody>';
   rows.forEach(x => {
-    const isBed = x.it.place !== 'planter';
-    const placeLabel = isBed ? '畝' + (parseInt(x.it.place.slice(3), 10) + 1) : 'ベランダ';
-    const useLabel = isBed
-      ? bedLengthFor(x.v, x.it.qty, lay.bedW) + 'cm'
-      : (x.it.qty / plantsPerPlanter(x.v)).toFixed(1) + '個';
+    const placeLabel = '畝' + (parseInt(x.it.place.slice(3), 10) + 1);
+    const useLabel = bedLengthFor(x.v, x.it.qty, lay.bedW) + 'cm';
     r += `<tr data-veg="${x.v.id}">
       <td class="tiny">${placeLabel}</td>
       <td>${x.v.emoji} ${esc(x.v.name)}</td>
@@ -626,7 +539,7 @@ function renderSim() {
   r += '</tbody></table></div>';
   r += `<div class="tiny" style="margin-top:8px">
     ※金額換算はスーパーでの一般的な小売価格に基づく概算で、栽培が順調にいった場合の目安です。
-    土・肥料・プランター等の初期費用（1〜2万円）は含みません。</div>`;
+    土づくりの資材や道具などの初期費用（1〜2万円）は含みません。</div>`;
 
   /* 作業カレンダー */
   r += '<h2 class="sec">⑧ このプランの作業カレンダー</h2>';
@@ -635,7 +548,7 @@ function renderSim() {
     const v = byId(it.vegId);
     const p = v.plans.find(x => x.id === it.planId);
     if (!p) return;
-    const where = it.place === 'planter' ? 'ベランダ' : '畝' + (parseInt(it.place.slice(3), 10) + 1);
+    const where = '畝' + (parseInt(it.place.slice(3), 10) + 1);
     p.steps.forEach(st => {
       const a = dek(st.from[0], st.from[1]);
       const [mm] = undek(a);

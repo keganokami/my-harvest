@@ -10,8 +10,8 @@ VEG_DB.push(
   id: 'onion', name: 'タマネギ', kana: 'たまねぎ', family: 'ヒガンバナ科', emoji: '🧅',
   category: 'ネギ類',
   difficulty: 2, beginner: 4, cost: 5, freshness: 3, speed: 1,
-  place: ['plot', 'planter'], sun: 'full',
-  depth: 20, container: '深さ20cm以上の65cmプランターに10〜12株。地植えのほうが数を稼げます。',
+  place: ['plot'], sun: 'full',
+  depth: 20,
   spacing: { plant: 12, row: 20 },
   perM2: 40,
   summary: '11月に苗を植えて6月に収穫。冬の間ほぼ放置でよく、保存も効くので食費への貢献が最大級。',
@@ -68,8 +68,8 @@ VEG_DB.push(
   id: 'garlic', name: 'ニンニク', kana: 'にんにく', family: 'ヒガンバナ科', emoji: '🧄',
   category: 'ネギ類',
   difficulty: 1, beginner: 5, cost: 5, freshness: 4, speed: 1,
-  place: ['plot', 'planter'], sun: 'full',
-  depth: 25, container: '深さ25cmの65cmプランターに8株。',
+  place: ['plot'], sun: 'full',
+  depth: 25,
   spacing: { plant: 15, row: 20 },
   perM2: 30,
   summary: '9〜10月に植えて6月に収穫。8ヶ月間ほぼ何もしないのに、国産ニンニクは1個300円以上。',
@@ -91,7 +91,7 @@ VEG_DB.push(
   ],
   yieldNote: '1片から1個（6片球）。1m²で25〜30個',
   marketValue: 5000, valueUnit: '1m²あたり（国産1個200〜300円）',
-  water: 'ほぼ不要。プランターは乾いたら。',
+  water: 'ほぼ不要。雨まかせで育ちます。',
   fert: '2月・3月の追肥2回。それ以降は不要。',
   keys: [
     '種球（ネット入りの栽培用）を買い、1片ずつばらして「とがった方を上」に、深さ5cm程度で植える',
@@ -106,7 +106,7 @@ VEG_DB.push(
     { name: '葉が黄色く枯れる（春先）', sign: 'さび病（オレンジの斑点）', cause: '多湿・密植', fix: '風通しを確保。ひどい葉は除去。収穫は可能。' }
   ],
   companions: ['イチゴ', 'トマト（病害虫よけ）'],
-  tip: '「手間ゼロで金額効率が最高」の作物。3畳の畑の隅、日当たりの良い一角を10月から6月まで丸ごと任せる価値があります。'
+  tip: '「手間ゼロで金額効率が最高」の作物。畝の端、日当たりの良い一角を10月から6月まで丸ごと任せる価値があります。'
 },
 
 /* ---------------- 九条ネギ ---------------- */
@@ -114,12 +114,12 @@ VEG_DB.push(
   id: 'negi', name: '九条ネギ（葉ネギ）', kana: 'くじょうねぎ', family: 'ヒガンバナ科', emoji: '🌱',
   category: 'ネギ類',
   difficulty: 1, beginner: 5, cost: 4, freshness: 4, speed: 4,
-  place: ['plot', 'planter'], sun: 'full',
-  depth: 20, container: '65cmプランターで十分。ベランダの定番。',
+  place: ['plot'], sun: 'full',
+  depth: 20,
   spacing: { plant: 5, row: 15 },
   perM2: 100,
   summary: '関西の食卓に欠かせない葉ネギ。刈り取ればまた伸びる「無限ネギ」。薬味を買う必要がなくなります。',
-  whyGood: '一度植えれば刈り取りと株分けで何年も続きます。薬味は少量ずつ必要になるものなので、買うと余らせがち。ベランダに1鉢あるだけで生活が変わる実用性。',
+  whyGood: '一度植えれば刈り取りと株分けで何年も続きます。薬味は少量ずつ必要になるものなので、買うと余らせがち。畝の端に少しあるだけで生活が変わる実用性。',
   plans: [
     {
       id: 'spring-seedling', label: '春・苗から【最推奨】', start: 'seedling', difficulty: 1,
@@ -163,8 +163,8 @@ VEG_DB.push(
       days: 150
     }
   ],
-  yieldNote: 'プランター1つで年間を通じて薬味を自給',
-  marketValue: 3000, valueUnit: 'プランター1つ・年間（1袋150円×20袋相当）',
+  yieldNote: '1m²あたり年間を通じて薬味を自給（刈り取り年5〜6回）',
+  marketValue: 6000, valueUnit: '1m²・年間あたり',
   water: '普通。過湿は嫌います。',
   fert: '刈り取るたびに液肥か化成肥料を少量。',
   keys: [
@@ -186,8 +186,8 @@ VEG_DB.push(
   id: 'nira', name: 'ニラ', kana: 'にら', family: 'ヒガンバナ科', emoji: '🌿',
   category: 'ネギ類',
   difficulty: 1, beginner: 5, cost: 5, freshness: 3, speed: 3,
-  place: ['plot', 'planter'], sun: 'half',
-  depth: 20, container: '65cmプランターで数年間もちます。',
+  place: ['plot'], sun: 'half',
+  depth: 20,
   spacing: { plant: 20, row: 25 },
   perM2: 20,
   summary: '一度植えたら3〜4年、年に5〜6回刈り取れる多年草。半日陰でも育つ究極の省力作物。',
@@ -238,8 +238,8 @@ VEG_DB.push(
   id: 'myoga', name: 'ミョウガ', kana: 'みょうが', family: 'ショウガ科', emoji: '🌱',
   category: '多年草',
   difficulty: 1, beginner: 5, cost: 5, freshness: 5, speed: 1,
-  place: ['plot', 'planter'], sun: 'shade',
-  depth: 30, container: '深さ30cm以上の大型プランター。地下茎で広がるので容器のほうが管理しやすい。',
+  place: ['plot'], sun: 'shade',
+  depth: 30,
   spacing: { plant: 20, row: 30 },
   perM2: 15,
   summary: '日陰でこそよく育つ稀有な野菜。一度植えたら10年放置で毎夏収穫。3個200円の薬味が穫り放題。',
@@ -281,8 +281,8 @@ VEG_DB.push(
   id: 'shiso', name: 'シソ（大葉）', kana: 'しそ', family: 'シソ科', emoji: '🌿',
   category: 'ハーブ',
   difficulty: 1, beginner: 5, cost: 5, freshness: 5, speed: 4,
-  place: ['plot', 'planter'], sun: 'half',
-  depth: 20, container: '直径20cm鉢に1株で十分。半日陰のほうが葉が柔らかくなります。',
+  place: ['plot'], sun: 'half',
+  depth: 20,
   spacing: { plant: 30, row: 40 },
   perM2: 8,
   summary: '1株で夏中、数百枚。10枚100円の大葉を買う生活から解放されます。こぼれ種で翌年も生えます。',
@@ -334,8 +334,8 @@ VEG_DB.push(
   id: 'basil', name: 'バジル', kana: 'ばじる', family: 'シソ科', emoji: '🌿',
   category: 'ハーブ',
   difficulty: 1, beginner: 5, cost: 5, freshness: 5, speed: 4,
-  place: ['plot', 'planter'], sun: 'full',
-  depth: 20, container: '直径20cm鉢に1株。ベランダの定番。',
+  place: ['plot'], sun: 'full',
+  depth: 20,
   spacing: { plant: 25, row: 30 },
   perM2: 12,
   summary: '摘むほど増える。夏の間ずっと穫れて、最後にジェノベーゼソースにすれば冷凍で1年もちます。',
@@ -376,7 +376,7 @@ VEG_DB.push(
     { name: '茎ばかり伸びて葉が少ない', sign: '徒長', cause: '摘心不足・日照不足', fix: '思い切って半分に切り戻すと復活します。' }
   ],
   companions: ['ミニトマト（害虫よけ・生育促進）'],
-  tip: 'ミニトマトの鉢の空きスペースに一緒に植えるのが定番。互いに相性がよく、収穫も同じ時期です。'
+  tip: 'ミニトマトの株元に一緒に植えるのが定番。互いに相性がよく、収穫も同じ時期です。'
 },
 
 /* ---------------- パセリ ---------------- */
@@ -384,8 +384,8 @@ VEG_DB.push(
   id: 'parsley', name: 'パセリ・イタリアンパセリ', kana: 'ぱせり', family: 'セリ科', emoji: '🌿',
   category: 'ハーブ',
   difficulty: 2, beginner: 4, cost: 5, freshness: 4, speed: 3,
-  place: ['plot', 'planter'], sun: 'half',
-  depth: 20, container: '直径20cm鉢に1株。半日陰でよく育ちます。',
+  place: ['plot'], sun: 'half',
+  depth: 20,
   spacing: { plant: 20, row: 25 },
   perM2: 16,
   summary: '半日陰で1年以上収穫が続く。外葉をかき取れば真冬でも穫れる、息の長い実用ハーブ。',
@@ -437,44 +437,6 @@ VEG_DB.push(
   ],
   companions: ['ナス（株元の乾燥防止）', 'トマト'],
   tip: 'ナスの株元に植えると、地面を覆って乾燥を防ぐ「リビングマルチ」になります。'
-},
-
-/* ---------------- ミント ---------------- */
-{
-  id: 'mint', name: 'ミント', kana: 'みんと', family: 'シソ科', emoji: '🍃',
-  category: 'ハーブ',
-  difficulty: 1, beginner: 5, cost: 3, freshness: 4, speed: 5,
-  place: ['planter'], sun: 'half',
-  depth: 20, container: '【必ず鉢で】地植えは絶対に避ける。地下茎で庭全体に広がります。',
-  spacing: { plant: 25, row: 30 },
-  perM2: 12,
-  summary: '丈夫すぎるほど丈夫。ただし地植えすると数年で庭を制圧するので、必ず容器で。',
-  whyGood: '半日陰・水やりだけで何年も育ち、ハーブティーやモヒートに使えます。ただし増えすぎるので「隔離栽培」が絶対条件。',
-  plans: [
-    {
-      id: 'spring-seedling', label: '苗から（鉢限定）', start: 'seedling', difficulty: 1,
-      steps: [
-        { kind: 'plant', label: '苗を鉢に植付け', from: [3, 1], to: [6, 3] },
-        { kind: 'grow', label: '生育・刈り込み', from: [4, 1], to: [11, 1] },
-        { kind: 'harvest', label: '収穫', from: [5, 1], to: [11, 1] }
-      ],
-      days: 30
-    }
-  ],
-  yieldNote: '1鉢から使い切れないほど',
-  marketValue: 800, valueUnit: '1株あたり',
-  water: '水を好みます。',
-  fert: 'ほぼ不要。',
-  keys: [
-    '【厳守】地植え禁止。鉢を地面に直接置くのも避ける（底穴から地下茎が逃げます）',
-    '茂りすぎたら株元近くまで刈り込む。すぐ再生します',
-    '2〜3年で根詰まりするので株分けして植え替え'
-  ],
-  troubles: [
-    { name: '増えすぎる', sign: '鉢からあふれる', cause: 'ミントの本性', fix: '定期的に刈り込み、株分けで小さくする。' }
-  ],
-  companions: [],
-  tip: '「ミントテロ」という言葉があるほど。楽しむなら必ず単独の鉢で。'
 }
 
 );

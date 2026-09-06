@@ -156,6 +156,7 @@ function ensureCropShape(c) {
   if (!c.id) c.id = 'c' + Math.random().toString(36).slice(2, 9) + Date.now().toString(36);
   if (!Array.isArray(c.entries)) c.entries = [];
   if (c.ended === undefined) c.ended = false;
+  c.place = 'plot';                       // 畑のみを扱うため、旧データのプランター記録も畑として扱う
   return c;
 }
 function cropById(id) { return APP.crops.find(c => c.id === id); }
@@ -243,7 +244,7 @@ function diagnose(c) {
     const diff = actIdx - expIdx;
     if (diff <= -2) {
       const causes = [];
-      if (v.sun === 'full' && c.place === 'planter') causes.push('日照不足（この作物は1日6時間以上必要）');
+      if (v.sun === 'full') causes.push('日当たり不足（この作物は1日6時間以上必要）');
       if (daysSinceWork(c, 'fert') === null && FERT_INTERVAL[v.category] && !NO_FERT.includes(v.id))
         causes.push('追肥をまだ一度もしていない');
       if (['葉物', '根菜'].includes(v.category) && daysSinceWork(c, 'thin') === null)
@@ -275,7 +276,8 @@ function diagnose(c) {
     if (curId === 'flower' && v.category === '果菜') {
       push('blue', '今やること：着果の確認と追肥開始',
         '最初の実がピンポン玉大になったら追肥を始めます。それより早い追肥は「つるボケ」の原因です。'
-        + (c.place === 'planter' ? 'ベランダは虫が来にくいので、朝のうちに花を軽く揺らすか筆で人工授粉すると確実です。' : ''));
+        + (['cucumber', 'zucchini', 'goya', 'strawberry'].includes(v.id)
+            ? '実つきが悪ければ、朝のうちに雄花の花粉を雌花につける人工授粉が確実です。' : ''));
     }
     if (curId === 'harvest' || curId === 'peak') {
       push('green', '収穫期です',
@@ -301,13 +303,13 @@ function diagnose(c) {
   if (entry) {
     if (entry.vigor === 'leggy') {
       push('red', '徒長しています（ひょろ長い）',
-        '原因は【日照不足】【密植】【窒素過多】のいずれか。日当たりの良い場所へ移し、間引いて株間を空け、追肥は止めてください。'
-        + (v.sun === 'full' && c.place === 'planter' ? `${v.name}は1日6時間以上の直射日光が必要です。3時間未満の場所ではどうやっても徒長します。` : ''));
+        '原因は【日照不足】【密植】【窒素過多】のいずれか。間引いて株間を空け、追肥は止めてください。'
+        + (v.sun === 'full' ? `${v.name}は1日6時間以上の直射日光が必要です。日陰になる畝ではどうやっても徒長します。` : ''));
     }
     if (entry.vigor === 'small') {
       push('', '株が大きくならない',
-        `多いのは【株間が狭い】【肥料切れ】【根が張れる土の量が足りない】の3つ。${v.name}は株間${v.spacing.plant}cm・深さ${v.depth}cm以上が必要です。`
-        + (c.place === 'planter' ? `プランターは土の量が足りないと必ず頭打ちになります（目安：${v.container}）。` : ''));
+        `多いのは【株間が狭い】【肥料切れ】【土が浅い・硬い】の3つ。${v.name}は株間${v.spacing.plant}cm・深さ${v.depth}cm以上の耕土が必要です。`
+        + '畝を深く耕せていないと、途中で必ず頭打ちになります。');
     }
     if (entry.leaf === 'pale') {
       const fd = daysSinceWork(c, 'fert');
@@ -321,7 +323,7 @@ function diagnose(c) {
         fertAdvised = true;
       } else {
         push('', '葉の色が薄い',
-          `追肥は${fd}日前に済んでいるので、水のやりすぎによる根傷みも疑ってください。プランターは受け皿に水を溜めたままにしないこと。`);
+          `追肥は${fd}日前に済んでいるので、水のやりすぎや水はけの悪さによる根傷みも疑ってください。畝が低いと雨のあとに水が溜まります。`);
         fertAdvised = true;
       }
     }
@@ -386,22 +388,18 @@ function diagnose(c) {
         '葉の付け根から出る芽を摘みます。週2回チェックが目安。放置すると枝が増えすぎて実が小さくなります。');
     }
   }
-  if (c.place === 'planter' && mon >= 6 && mon <= 9) {
+  if (mon >= 7 && mon <= 8) {
     const wd = daysSinceWork(c, 'water');
-    if (wd !== null && wd >= 3) {
-      push('red', '水やりの記録が3日以上ありません',
-        '夏のプランターは1日で乾きます。記録漏れならよいのですが、土の表面が乾いていたら朝のうちにたっぷり与えてください。');
+    if (wd !== null && wd >= 7) {
+      push('red', '真夏の水やりが1週間以上ありません',
+        '地植えでも、真夏に1週間以上雨がなければ水やりが必要です。朝のうちに株元へたっぷり与え、敷きわらで地面の乾燥を抑えてください。');
     }
-    push('', 'ベランダの夏の注意',
-      'コンクリートの照り返しで鉢の土は50℃近くになります。すのこや鉢台で10cm浮かせるだけで大きく変わります。');
   }
 
   /* --- 6. 季節リスク（関係する作物だけ） --- */
-  if ((mon === 9 || mon === 10) && (c.place === 'planter' || ['果菜', '豆'].includes(v.category))) {
+  if ((mon === 9 || mon === 10) && ['果菜', '豆'].includes(v.category)) {
     push('', '台風への備え',
-      c.place === 'planter'
-        ? '鉢は事前に室内か壁際へ移動し、支柱は手すりに結束バンドで固定してください。'
-        : '支柱を杭にしっかり固定し、背の高い株は倒伏防止に紐で寄せておくと安心です。');
+      '支柱を杭にしっかり固定し、背の高い株は倒伏防止に紐で寄せておくと安心です。');
   }
   if (mon === 6 && ['果菜', '豆'].includes(v.category)) {
     push('', '梅雨の病気に注意',
@@ -439,7 +437,7 @@ function renderLogTab() {
         <div class="cicon">${v.emoji}</div>
         <div class="cbody">
           <div class="ctitle">${esc(v.name)}${c.ended ? ' <span class="pill">終了</span>' : ''}</div>
-          <div class="tiny">${esc(p.label)} ／ ${c.date} 開始 ／ ${d.days}日経過 ／ ${c.qty}株 ／ ${c.place === 'plot' ? '地植え' : 'プランター'}</div>
+          <div class="tiny">${esc(p.label)} ／ ${c.date} 開始 ／ ${d.days}日経過 ／ ${c.qty}株</div>
           <div class="progress"><i style="width:${d.progress}%"></i></div>
           <div class="tiny">${d.actIdx >= 0 ? '記録上の状態：<b>' + esc(d.stages[d.actIdx].label) + '</b>' : '状態は未記録'}
             ／ 標準的な進み：${esc(d.stages[d.expIdx].label)}</div>

@@ -66,8 +66,6 @@ function renderCalendar() {
   buildChips(fBox, [
     { label: '始め方', get: () => calFilter.start, set: v => calFilter.start = v,
       options: [{ v: 'all', t: 'すべて' }, { v: 'seed', t: '種から' }, { v: 'seedling', t: '苗・株から' }] },
-    { label: '場所', get: () => calFilter.place, set: v => calFilter.place = v,
-      options: [{ v: 'all', t: 'すべて' }, { v: 'plot', t: '地植え' }, { v: 'planter', t: 'プランター可' }] },
     { label: '難易度', get: () => calFilter.level, set: v => calFilter.level = v,
       options: [{ v: 'all', t: 'すべて' }, { v: 'easy', t: '初心者向けのみ' }] }
   ], renderCalendar);
@@ -136,8 +134,6 @@ function renderVegList() {
   buildChips(fBox, [
     { label: '分類', get: () => vegFilter.cat, set: v => vegFilter.cat = v,
       options: cats.map(c => ({ v: c, t: c === 'all' ? 'すべて' : c })) },
-    { label: '場所', get: () => vegFilter.place, set: v => vegFilter.place = v,
-      options: [{ v: 'all', t: 'すべて' }, { v: 'plot', t: '地植え' }, { v: 'planter', t: 'プランター可' }] },
     { label: '難易度', get: () => vegFilter.level, set: v => vegFilter.level = v,
       options: [{ v: 'all', t: 'すべて' }, { v: 'easy', t: '★初心者向け' }] },
     { label: '時期', get: () => (vegFilter.now ? 'now' : 'all'), set: v => vegFilter.now = (v === 'now'),
@@ -167,7 +163,6 @@ function renderVegList() {
         `<span class="pill">${esc(v.family)}</span>` +
         `<span class="pill ${v.beginner >= 4 ? 'green' : ''}">やさしさ ${stars(v.beginner)}</span>` +
         `<span class="pill ${v.cost >= 4 ? 'accent' : ''}">おトク度 ${stars(v.cost)}</span>` +
-        (v.place.includes('planter') ? '<span class="pill blue">プランター可</span>' : '') +
         (v.sun === 'shade' ? '<span class="pill">半日陰OK</span>' : (v.sun === 'half' ? '<span class="pill">半日陰でも可</span>' : '')) +
       `</div>`;
     c.onclick = () => openVeg(v.id);
@@ -240,7 +235,6 @@ function openVeg(id) {
   h += `<div class="table-wrap"><table class="data">
     <tr><th style="width:34%">株間 × 条間</th><td>${v.spacing.plant}cm × ${v.spacing.row}cm</td></tr>
     <tr><th>必要な土の深さ</th><td>${v.depth}cm 以上</td></tr>
-    <tr><th>プランターの目安</th><td>${esc(v.container)}</td></tr>
     <tr><th>1m²あたりの株数</th><td>約 ${v.perM2} 株</td></tr>
     <tr><th>収量の目安</th><td>${esc(v.yieldNote)}</td></tr>
     <tr><th>金額の目安</th><td>約 ${v.marketValue.toLocaleString()}円 ／ ${esc(v.valueUnit)}</td></tr>

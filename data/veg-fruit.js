@@ -9,11 +9,11 @@ VEG_DB.push(
   id: 'minitomato', name: 'ミニトマト', kana: 'みにとまと', family: 'ナス科', emoji: '🍅',
   category: '果菜',
   difficulty: 2, beginner: 4, cost: 5, freshness: 5, speed: 3,
-  place: ['plot', 'planter'], sun: 'full',
-  depth: 30, container: '10号鉢（直径30cm）に1株、または深型65cmプランターに1〜2株。土は最低15L/株。',
+  place: ['plot'], sun: 'full',
+  depth: 30,
   spacing: { plant: 45, row: 70 },
   perM2: 3,
-  summary: '1株で150〜250個。夏の間ずっと穫れ続ける、ベランダ菜園の絶対的エース。',
+  summary: '1株で150〜250個。夏の間ずっと穫れ続ける、家庭菜園の絶対的エース。',
   whyGood: '大玉トマトと違い実割れや尻腐れが少なく、初心者でも確実に穫れます。1株300円の苗が2000円分以上の実になり、採れたての味は市販品と別物。',
   plans: [
     {
@@ -41,7 +41,7 @@ VEG_DB.push(
   ],
   yieldNote: '1株から150〜250個',
   marketValue: 2500, valueUnit: '1株あたり',
-  water: '【控えめが正解】表土が乾いてから。水を絞るほど甘くなります。ただしプランターは夏に朝夕2回必要な日も。',
+  water: '【控えめが正解】表土が乾いてから。水を絞るほど甘くなります。地植えなら真夏に週2回程度で十分。',
   fert: '一番果が膨らみ始めたら追肥開始、以後2〜3週おき。早すぎる追肥は「つるボケ」の原因。',
   keys: [
     '苗選びが8割。「第一花房に花が咲いている、茎が太く節間が詰まった苗」を選ぶ',
@@ -49,7 +49,7 @@ VEG_DB.push(
     '【わき芽かき】葉の付け根から出る芽をすべて摘む。週2回のチェックが必要。放置するとジャングルになり実が小さくなります',
     '支柱は150cm以上。8の字にゆるく結ぶ',
     '真っ赤に完熟してから穫る。ここが市販品との最大の差になります',
-    '雨に当たると実が割れるので、可能なら軒下やベランダが有利'
+    '雨に当たると実が割れる。株元に敷きわらをして泥はねを防ぎ、可能なら簡易の雨よけを立てると裂果が減ります'
   ],
   troubles: [
     { name: '実のお尻が黒くへこむ', sign: '尻腐れ果', cause: 'カルシウム不足＋水やりムラ', fix: '水切れと過湿を繰り返さない。カルシウム資材の葉面散布も有効。' },
@@ -67,12 +67,12 @@ VEG_DB.push(
   id: 'eggplant', name: 'ナス', kana: 'なす', family: 'ナス科', emoji: '🍆',
   category: '果菜',
   difficulty: 3, beginner: 3, cost: 5, freshness: 4, speed: 3,
-  place: ['plot', 'planter'], sun: 'full',
-  depth: 35, container: '深さ35cm・容量20L以上の大型鉢に1株。ナスは水と肥料を大量に必要とします。',
+  place: ['plot'], sun: 'full',
+  depth: 35,
   spacing: { plant: 60, row: 70 },
   perM2: 2,
   summary: '水と肥料さえ切らさなければ、6月から10月まで1株30〜50本。夏の畑の長距離ランナー。',
-  whyGood: '収穫期間が非常に長く、真夏に「更新剪定」をすれば秋にもう一度たくさん穫れます。ただし水やりをサボると即失敗するので、ベランダでは毎日世話ができる人向け。',
+  whyGood: '収穫期間が非常に長く、真夏に「更新剪定」をすれば秋にもう一度たくさん穫れます。ただし水切れに弱いので、真夏に畑へ通えない人には向きません。',
   plans: [
     {
       id: 'spring-seedling', label: '春・苗から【最推奨】', start: 'seedling', difficulty: 3,
@@ -113,12 +113,12 @@ VEG_DB.push(
   id: 'pepper', name: 'ピーマン・シシトウ', kana: 'ぴーまん', family: 'ナス科', emoji: '🫑',
   category: '果菜',
   difficulty: 2, beginner: 5, cost: 5, freshness: 4, speed: 3,
-  place: ['plot', 'planter'], sun: 'full',
-  depth: 30, container: '10号鉢に1株、または深型65cmプランターに1〜2株。',
+  place: ['plot'], sun: 'full',
+  depth: 30,
   spacing: { plant: 45, row: 60 },
   perM2: 3,
   summary: '夏野菜で最も失敗しにくい。1株から100個近く穫れ、10月末まで収穫が続きます。',
-  whyGood: 'ナスほど水を要求せず、トマトほど整枝も要らない。病害虫にも比較的強く、「植えたら穫れる」に最も近い夏野菜です。3畳の畑なら必ず1株入れたい。',
+  whyGood: 'ナスほど水を要求せず、トマトほど整枝も要らない。病害虫にも比較的強く、「植えたら穫れる」に最も近い夏野菜です。狭い畑でも必ず1株入れたい。',
   plans: [
     {
       id: 'spring-seedling', label: '春・苗から【最推奨】', start: 'seedling', difficulty: 2,
@@ -156,8 +156,8 @@ VEG_DB.push(
   id: 'cucumber', name: 'キュウリ', kana: 'きゅうり', family: 'ウリ科', emoji: '🥒',
   category: '果菜',
   difficulty: 3, beginner: 3, cost: 4, freshness: 5, speed: 4,
-  place: ['plot', 'planter'], sun: 'full',
-  depth: 30, container: '深さ30cm・容量20L以上に1株。水の要求量が多く、プランターでは毎日の水やりが必須。',
+  place: ['plot'], sun: 'full',
+  depth: 30,
   spacing: { plant: 45, row: 90 },
   perM2: 3,
   summary: '植えて1ヶ月半で穫れ始め、1日1本ペースで穫れる爆速野菜。ただし寿命は2〜3ヶ月と短命。',
@@ -210,8 +210,8 @@ VEG_DB.push(
   id: 'edamame', name: 'エダマメ', kana: 'えだまめ', family: 'マメ科', emoji: '🫛',
   category: '豆',
   difficulty: 2, beginner: 4, cost: 4, freshness: 5, speed: 4,
-  place: ['plot', 'planter'], sun: 'full',
-  depth: 25, container: '深さ25cm以上の65cmプランターに4株。',
+  place: ['plot'], sun: 'full',
+  depth: 25,
   spacing: { plant: 25, row: 40 },
   perM2: 12,
   summary: '「収穫して3時間以内が最高」と言われる、鮮度がすべての野菜。自分で作る意味が最も大きい。',
@@ -263,12 +263,12 @@ VEG_DB.push(
   id: 'okra', name: 'オクラ', kana: 'おくら', family: 'アオイ科', emoji: '🌶️',
   category: '果菜',
   difficulty: 2, beginner: 4, cost: 4, freshness: 5, speed: 3,
-  place: ['plot', 'planter'], sun: 'full',
-  depth: 30, container: '深さ30cm以上に1〜2株。',
+  place: ['plot'], sun: 'full',
+  depth: 30,
   spacing: { plant: 30, row: 60 },
   perM2: 6,
   summary: '猛暑が大好き。真夏に他の野菜が弱る中、毎日1本ずつ穫れ続けます。花もきれい。',
-  whyGood: '高温乾燥に強く、真夏の水やりを多少サボっても平気。7月〜10月の長期間穫れ、狭い場所でも縦に育つのでベランダ向き。',
+  whyGood: '高温乾燥に強く、真夏に水やりを多少サボっても平気。7月〜10月の長期間穫れ、上へ伸びるので畝の幅を取らないのも利点。',
   plans: [
     {
       id: 'spring-seed', label: '春まき【推奨】', start: 'seed', difficulty: 2,
@@ -307,7 +307,7 @@ VEG_DB.push(
     { name: '葉裏に小さな虫', sign: 'アブラムシ・フタトガリコヤガ', cause: '', fix: '数が少なければ捕殺で十分。' }
   ],
   companions: [],
-  tip: '花は一日花で、ハイビスカスに似た美しい黄色。観賞価値もあるのでベランダに1株あると楽しいです。'
+  tip: '花は一日花で、ハイビスカスに似た美しい黄色。畝の端に1株あると畑が華やぎます。'
 },
 
 /* ---------------- ゴーヤ ---------------- */
@@ -315,12 +315,12 @@ VEG_DB.push(
   id: 'goya', name: 'ゴーヤ（ニガウリ）', kana: 'ごーや', family: 'ウリ科', emoji: '🥒',
   category: '果菜',
   difficulty: 2, beginner: 4, cost: 3, freshness: 3, speed: 3,
-  place: ['plot', 'planter'], sun: 'full',
-  depth: 30, container: '容量25L以上の大型プランターに1〜2株。',
+  place: ['plot'], sun: 'full',
+  depth: 30,
   spacing: { plant: 50, row: 90 },
   perM2: 2,
   summary: '「緑のカーテン」として日よけになり、実も穫れる一石二鳥。ウリ科では最も丈夫。',
-  whyGood: '病害虫に非常に強く、暑さで枯れることもほぼない。ベランダの西日対策として実用価値が高く、室温を2〜3℃下げます。',
+  whyGood: '病害虫に非常に強く、暑さで枯れることもほぼない。ウリ科では最も丈夫で、支柱とネットさえ立てれば放任でよく穫れます。',
   plans: [
     {
       id: 'spring-seedling', label: '春・苗から【推奨】', start: 'seedling', difficulty: 2,
@@ -345,7 +345,7 @@ VEG_DB.push(
     }
   ],
   yieldNote: '1株から15〜30本',
-  marketValue: 2000, valueUnit: '1株あたり（＋夏の冷房費節約）',
+  marketValue: 2000, valueUnit: '1株あたり',
   water: '夏は毎日たっぷり。カーテンにするなら水切れ厳禁。',
   fert: '2〜3週おきに追肥。',
   keys: [
@@ -359,7 +359,7 @@ VEG_DB.push(
     { name: '実がすぐ黄色くなる', sign: '完熟', cause: '収穫遅れ', fix: '濃い緑でイボが張っているうちに穫る。' }
   ],
   companions: [],
-  tip: 'ベランダの南〜西面に設置すると、夏の室温が体感で大きく変わります。実は食べきれないほど穫れるので近所へのお裾分け向き。'
+  tip: '実は食べきれないほど穫れます。薄切りにして冷凍しておくと、夏の間ずっと使えます。'
 },
 
 /* ---------------- インゲン ---------------- */
@@ -367,8 +367,8 @@ VEG_DB.push(
   id: 'ingen', name: 'インゲン（つるなし）', kana: 'いんげん', family: 'マメ科', emoji: '🫛',
   category: '豆',
   difficulty: 1, beginner: 5, cost: 4, freshness: 4, speed: 5,
-  place: ['plot', 'planter'], sun: 'full',
-  depth: 25, container: '65cmプランターに4株。支柱不要のつるなし種が便利。',
+  place: ['plot'], sun: 'full',
+  depth: 25,
   spacing: { plant: 25, row: 40 },
   perM2: 12,
   summary: 'まいて50〜60日で穫れる「三度豆」。つるなし種なら支柱もいらず、狭い場所の隙間作物に最適。',
@@ -417,8 +417,8 @@ VEG_DB.push(
   id: 'snappea', name: 'スナップエンドウ・絹さや', kana: 'すなっぷえんどう', family: 'マメ科', emoji: '🫛',
   category: '豆',
   difficulty: 2, beginner: 4, cost: 5, freshness: 5, speed: 1,
-  place: ['plot', 'planter'], sun: 'full',
-  depth: 30, container: '深さ30cm以上の65cmプランターに3〜4株。支柱・ネット必須。',
+  place: ['plot'], sun: 'full',
+  depth: 30,
   spacing: { plant: 30, row: 60 },
   perM2: 6,
   summary: '秋にまいて小さな苗で冬を越し、春に大収穫。冬の畑を有効活用できる高コスパ作物。',
@@ -482,8 +482,8 @@ VEG_DB.push(
   id: 'soramame', name: 'ソラマメ', kana: 'そらまめ', family: 'マメ科', emoji: '🫘',
   category: '豆',
   difficulty: 3, beginner: 3, cost: 5, freshness: 5, speed: 1,
-  place: ['plot', 'planter'], sun: 'full',
-  depth: 30, container: '深さ30cm以上、1株あたり15L。65cmプランターに2株。',
+  place: ['plot'], sun: 'full',
+  depth: 30,
   spacing: { plant: 40, row: 70 },
   perM2: 4,
   summary: '採れたてを焼いて食べる味は、家庭菜園でしか味わえないもの。ただしアブラムシとの戦いがあります。',
@@ -536,8 +536,8 @@ VEG_DB.push(
   id: 'strawberry', name: 'イチゴ', kana: 'いちご', family: 'バラ科', emoji: '🍓',
   category: '果菜',
   difficulty: 3, beginner: 3, cost: 3, freshness: 5, speed: 1,
-  place: ['plot', 'planter'], sun: 'full',
-  depth: 20, container: '65cmプランターに3株、またはハンギングでも可。ベランダ向き。',
+  place: ['plot'], sun: 'full',
+  depth: 20,
   spacing: { plant: 25, row: 40 },
   perM2: 10,
   summary: '10月に苗を植えて冬を越し、4〜5月に収穫。収量は多くありませんが、育てる楽しさは随一。',
@@ -565,11 +565,11 @@ VEG_DB.push(
     '苗の「ランナー（親株とつながっていた跡）」の反対側に実がつくので、ランナー跡を通路側に向けて植える',
     '冬に枯れた下葉はこまめに取る（病気予防）',
     '3月に敷きわらか黒マルチ。実が土に触れると腐ります',
-    '春の開花時、ベランダで虫が来ない場合は筆で花の中心をなでて人工授粉。形の良い実になります',
+    '春の開花時、虫が少ない年は筆で花の中心をなでて人工授粉すると、形の良い実になります',
     '収穫後、ランナーから出た子株の「2番目・3番目」を来年の苗に（1番目は親の病気を受け継ぎやすい）'
   ],
   troubles: [
-    { name: '実が変形する', sign: 'いびつな形', cause: '受粉ムラ', fix: '筆で人工授粉。ベランダでは特に有効。' },
+    { name: '実が変形する', sign: 'いびつな形', cause: '受粉ムラ', fix: '筆で人工授粉。訪花昆虫が少ない時期は特に有効。' },
     { name: '実が白いまま・腐る', sign: 'カビ', cause: '灰色かび病・実が土に接触', fix: 'マルチを敷き、傷んだ実は即除去。' },
     { name: '株が枯れる', sign: '越冬失敗', cause: 'クラウンを埋めた・水切れ', fix: '浅植えを徹底。冬も完全乾燥は避ける。' }
   ],
@@ -583,7 +583,7 @@ VEG_DB.push(
   category: '果菜',
   difficulty: 2, beginner: 4, cost: 5, freshness: 4, speed: 4,
   place: ['plot'], sun: 'full',
-  depth: 30, container: '株が大きく広がるので地植え向き。プランターなら30L以上に1株。',
+  depth: 30,
   spacing: { plant: 80, row: 100 },
   perM2: 1,
   summary: '1株から15〜25本。1本150〜200円する野菜が、6〜7月に毎日のように穫れます。',
@@ -615,8 +615,8 @@ VEG_DB.push(
   water: '実の肥大期はたっぷり。',
   fert: '2週おきに追肥。',
   keys: [
-    '葉が非常に大きいので、1株あたり1m²近い場所を見込む。3畳の畑なら1株が限度',
-    '朝、雄花を摘んで雌花にこすりつける人工授粉をすると確実（特にベランダ）',
+    '葉が非常に大きいので、1株あたり1m²近い場所を見込む。狭い畑なら1株が限度',
+    '朝、雄花を摘んで雌花にこすりつける人工授粉をすると確実',
     '開花から1週間、長さ20cmで収穫。大きくすると味が落ち、株も疲れます',
     '古い下葉は切り取って風通しを確保。うどんこ病の予防になります'
   ],

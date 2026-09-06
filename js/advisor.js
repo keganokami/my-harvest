@@ -306,7 +306,7 @@ function renderCropAdvice() {
       <div class="cicon">${d.v.emoji}</div>
       <div class="cbody">
         <div class="ctitle">${esc(d.v.name)}
-          <span class="tiny">／ ${c.qty}株 ／ ${c.place === 'plot' ? '地植え' : 'プランター'}</span></div>
+          <span class="tiny">／ ${c.qty}株</span></div>
         <div class="tiny">${d.days}日目 ・ ${d.actIdx >= 0 ? esc(d.stages[d.actIdx].label) : '状態は未記録'}</div>
         <div class="progress"><i style="width:${d.progress}%"></i></div>
         ${top ? `<div class="note ${top.level}" style="margin:6px 0 0"><strong>${esc(top.title)}</strong>${top.body}</div>` : ''}

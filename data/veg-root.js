@@ -9,8 +9,8 @@ VEG_DB.push(
   id: 'daikon', name: 'ダイコン', kana: 'だいこん', family: 'アブラナ科', emoji: '🥕',
   category: '根菜',
   difficulty: 2, beginner: 4, cost: 4, freshness: 4, speed: 2,
-  place: ['plot', 'planter'], sun: 'full',
-  depth: 40, container: '深さ40cm以上の大型プランター、または土のう袋。短根種（三太郎など）なら深さ30cmでも可。',
+  place: ['plot'], sun: 'full',
+  depth: 40,
   spacing: { plant: 25, row: 30 },
   perM2: 12,
   summary: '土さえ深く耕せば失敗しにくい秋の主力。1本200円が1袋の種から20本穫れます。',
@@ -62,12 +62,12 @@ VEG_DB.push(
   id: 'kabu', name: 'カブ（小カブ）', kana: 'かぶ', family: 'アブラナ科', emoji: '🍥',
   category: '根菜',
   difficulty: 1, beginner: 5, cost: 3, freshness: 5, speed: 4,
-  place: ['plot', 'planter'], sun: 'half',
-  depth: 20, container: '65cmプランター（深さ20cm）で十分。ベランダ向き。',
+  place: ['plot'], sun: 'half',
+  depth: 20,
   spacing: { plant: 10, row: 15 },
   perM2: 60,
   summary: 'ダイコンより浅い土で作れて、45日で穫れる。採れたてのカブは生でも甘い。',
-  whyGood: 'プランターで作れる根菜としては最優秀。葉も美味しく、間引き菜から本収穫まで無駄がありません。',
+  whyGood: 'ダイコンより浅い耕土でよく、生育も早い優秀な根菜。葉も美味しく、間引き菜から本収穫まで無駄がありません。',
   plans: [
     {
       id: 'autumn', label: '秋まき【最推奨】', start: 'seed', difficulty: 1,
@@ -88,8 +88,8 @@ VEG_DB.push(
       days: 45
     }
   ],
-  yieldNote: '65cmプランターで15〜20個',
-  marketValue: 900, valueUnit: 'プランター1つあたり',
+  yieldNote: '1m²あたり50〜60個',
+  marketValue: 3600, valueUnit: '1m²あたり',
   water: '乾湿の差が激しいと割れます。均一に。',
   fert: '追肥1〜2回。',
   keys: [
@@ -98,11 +98,11 @@ VEG_DB.push(
     '間引きが遅れると根が太らないので、こまめに'
   ],
   troubles: [
-    { name: '割れる', sign: '縦にひび', cause: '乾燥後の急な大雨・収穫遅れ', fix: '適期収穫。プランターは水やりを一定に。' },
+    { name: '割れる', sign: '縦にひび', cause: '乾燥後の急な大雨・収穫遅れ', fix: '適期収穫。乾燥が続いたら少しずつ水をやり、急激に水分が入らないようにする。' },
     { name: '丸くならない', sign: '細長いまま', cause: '間引き不足', fix: '株間10cmを確保。' }
   ],
   companions: [],
-  tip: 'ダイコンを植える場所がなくても、カブならプランターで根菜の楽しみが味わえます。'
+  tip: '畝を深く耕せない場所でも、カブなら20cmの耕土で根菜の楽しみが味わえます。ダイコンの前の腕試しに最適。'
 },
 
 /* ---------------- ニンジン ---------------- */
@@ -110,8 +110,8 @@ VEG_DB.push(
   id: 'carrot', name: 'ニンジン', kana: 'にんじん', family: 'セリ科', emoji: '🥕',
   category: '根菜',
   difficulty: 3, beginner: 3, cost: 4, freshness: 5, speed: 1,
-  place: ['plot', 'planter'], sun: 'full',
-  depth: 30, container: '深さ30cm以上。ミニニンジンなら20cmでも可。',
+  place: ['plot'], sun: 'full',
+  depth: 30,
   spacing: { plant: 10, row: 20 },
   perM2: 50,
   summary: '「発芽させられたら勝ち」。そこさえ越えれば放置でよく、採れたては甘さが別次元。',
@@ -163,8 +163,8 @@ VEG_DB.push(
   id: 'radish', name: 'ラディッシュ（二十日大根）', kana: 'らでぃっしゅ', family: 'アブラナ科', emoji: '🔴',
   category: '根菜',
   difficulty: 1, beginner: 5, cost: 2, freshness: 3, speed: 5,
-  place: ['plot', 'planter'], sun: 'half',
-  depth: 15, container: 'どんな小さな容器でもOK。牛乳パックでも育ちます。',
+  place: ['plot'], sun: 'half',
+  depth: 15,
   spacing: { plant: 5, row: 10 },
   perM2: 150,
   summary: '20〜30日で真っ赤な実が穫れる、最速・最も失敗しない野菜。最初の1つに最適。',
@@ -189,8 +189,8 @@ VEG_DB.push(
       days: 25
     }
   ],
-  yieldNote: 'プランター1つで30〜50個',
-  marketValue: 500, valueUnit: 'プランター1つあたり',
+  yieldNote: '1m²あたり120〜150個',
+  marketValue: 3000, valueUnit: '1m²あたり',
   water: '乾かすと辛くなり、割れます。均一に。',
   fert: 'ほぼ不要。',
   keys: [
@@ -210,8 +210,8 @@ VEG_DB.push(
   id: 'potato', name: 'ジャガイモ', kana: 'じゃがいも', family: 'ナス科', emoji: '🥔',
   category: 'イモ',
   difficulty: 2, beginner: 5, cost: 5, freshness: 4, speed: 3,
-  place: ['plot', 'planter'], sun: 'full',
-  depth: 30, container: '深さ30cm以上のプランター、または専用の栽培袋。1袋に1〜2個。',
+  place: ['plot'], sun: 'full',
+  depth: 30,
   spacing: { plant: 30, row: 60 },
   perM2: 6,
   summary: '植えて土を寄せるだけ。種イモ1kg（約800円）が3〜4kgのイモになる、投資効率の高い作物。',
@@ -241,7 +241,7 @@ VEG_DB.push(
   ],
   yieldNote: '種イモ1個から600g〜1kg。1m²で3〜5kg',
   marketValue: 1500, valueUnit: '1m²あたり',
-  water: '基本的に不要（雨だけで育つ）。プランターは乾いたら与える。',
+  water: '基本的に不要（雨だけで育つ）。真夏に2週間以上雨がないときだけ与える。',
   fert: '元肥＋土寄せ時の追肥1〜2回。多肥にすると病気が出ます。',
   keys: [
     '【必ず】食用のイモではなく「種イモ」を買う（病気が入っていないもの）。ホームセンターで1〜2月に並びます',
@@ -265,8 +265,8 @@ VEG_DB.push(
   id: 'sweetpotato', name: 'サツマイモ', kana: 'さつまいも', family: 'ヒルガオ科', emoji: '🍠',
   category: 'イモ',
   difficulty: 1, beginner: 5, cost: 4, freshness: 3, speed: 2,
-  place: ['plot', 'planter'], sun: 'full',
-  depth: 30, container: '大型プランターや栽培袋（30L以上）に1〜2本。地植えのほうが断然穫れます。',
+  place: ['plot'], sun: 'full',
+  depth: 30,
   spacing: { plant: 35, row: 70 },
   perM2: 4,
   summary: '肥料も水もいらない。やせた土地ほどよく育つ、放置栽培の王様。',
@@ -300,7 +300,7 @@ VEG_DB.push(
     { name: '芋が細長い・すじっぽい', sign: '形が悪い', cause: '土が硬い・浅い', fix: '深さ30cm以上をふかふかに。高畝にする。' }
   ],
   companions: [],
-  tip: '「夏に旅行で家を空ける」人でも枯れない数少ない野菜。3畳の畑の一角を夏の間まるごと任せられます。'
+  tip: '「夏に旅行で家を空ける」人でも枯れない数少ない野菜。畝の一角を夏の間まるごと任せられます。'
 }
 
 );

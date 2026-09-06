@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>my-harvest ｜ 家庭菜園プランナー（中間地・丘陵地）</title>
-<meta name="description" content="3畳の畑とベランダで始める家庭菜園。何を育てるか・どう育てるか・今どうすればよいかが分かるアプリ（中間地基準）">
+<meta name="description" content="小さな畑で始める家庭菜園。何を育てるか・どう育てるか・今どうすればよいかが分かるアプリ（中間地基準）">
 <meta name="theme-color" content="#4a7c3f">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="my-harvest">
@@ -124,21 +124,6 @@
             <option value="50">50cm（作業しやすい）</option>
           </select>
         </div>
-        <div class="field">
-          <label class="f">プランターの数（65cm相当）</label>
-          <select id="simPlanters">
-            <option>0</option><option>1</option><option>2</option>
-            <option selected>3</option><option>4</option><option>6</option><option>8</option>
-          </select>
-        </div>
-        <div class="field">
-          <label class="f">ベランダの日照</label>
-          <select id="simSun">
-            <option value="full">6時間以上（果菜もOK）</option>
-            <option value="half" selected>3〜6時間（葉物・根菜向き）</option>
-            <option value="shade">3時間未満（半日陰向きのみ）</option>
-          </select>
-        </div>
       </div>
       <div id="simLayout" style="margin-top:6px"></div>
     </div>
@@ -200,13 +185,6 @@
         <div class="field">
           <label class="f">株数</label>
           <input type="number" id="logQty" value="1" min="1" max="500" inputmode="numeric">
-        </div>
-        <div class="field">
-          <label class="f">場所</label>
-          <select id="logPlace">
-            <option value="plot">地植え</option>
-            <option value="planter">プランター</option>
-          </select>
         </div>
       </div>
       <div class="row btnrow"><button class="btn" id="logAdd">登録する</button></div>

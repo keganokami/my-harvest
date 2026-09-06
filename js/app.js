@@ -108,7 +108,7 @@ function initLogForm() {
       planId: psel.value,
       date: document.getElementById('logDate').value,
       qty: Math.max(1, parseInt(document.getElementById('logQty').value, 10) || 1),
-      place: document.getElementById('logPlace').value
+      place: 'plot'
     };
     if (!rec.date) { alert('開始日を入力してください。'); return; }
     APP.crops.push(ensureCropShape(rec));
@@ -128,14 +128,12 @@ function boot() {
     APP.sim.bedW = 70; APP.sim.pathW = 40;
     if (APP.sim.beds !== undefined) APP.sim.items = [];   // 区画割りは畝に引き継げないので破棄
   }
-  if (APP.sim.planters === undefined) APP.sim.planters = 3;
-  if (!APP.sim.sun) APP.sim.sun = 'half';
   if (!Array.isArray(APP.sim.items)) APP.sim.items = [];
-  delete APP.sim.areaM2; delete APP.sim.beds;
+  delete APP.sim.areaM2; delete APP.sim.beds; delete APP.sim.planters; delete APP.sim.sun;
   {
     const lay = bedLayout(APP.sim);
     APP.sim.items = APP.sim.items.filter(it =>
-      it.place === 'planter' || parseInt(it.place.slice(3), 10) < lay.count);
+      it.place !== 'planter' && parseInt(it.place.slice(3), 10) < lay.count);
   }
 
   const [m, j] = undek(APP.nowDek);

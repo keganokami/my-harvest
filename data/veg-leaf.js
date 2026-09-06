@@ -10,12 +10,12 @@ VEG_DB.push(
   id: 'komatsuna', name: 'コマツナ', kana: 'こまつな', family: 'アブラナ科', emoji: '🥬',
   category: '葉物',
   difficulty: 1, beginner: 5, cost: 3, freshness: 3, speed: 5,
-  place: ['plot', 'planter'], sun: 'half',
-  depth: 15, container: '65cmプランター（標準・深さ15cm以上）でOK。土10L程度。',
+  place: ['plot'], sun: 'half',
+  depth: 15,
   spacing: { plant: 5, row: 15 },
   perM2: 100,
   summary: '種をまいて30〜40日で穫れる、家庭菜園の入門No.1。暑さ寒さに強く、ほぼ失敗しません。',
-  whyGood: '発芽率が非常に高く、間引き菜も食べられるので「失敗」という状態になりにくい。ベランダのプランター1つで1〜2回の食卓分が穫れます。',
+  whyGood: '発芽率が非常に高く、間引き菜も食べられるので「失敗」という状態になりにくい。畝1mもあれば1〜2回の食卓分が穫れます。',
   plans: [
     {
       id: 'autumn', label: '秋まき【最推奨】', start: 'seed', difficulty: 1,
@@ -38,8 +38,8 @@ VEG_DB.push(
       days: 30
     }
   ],
-  yieldNote: '65cmプランター1つで約20〜30株（2〜3回の食卓分）',
-  marketValue: 600, valueUnit: 'プランター1つあたり',
+  yieldNote: '1m²あたり80〜100株（畝70cm×1mで50〜70株）',
+  marketValue: 3000, valueUnit: '1m²あたり',
   water: '土の表面が乾いたらたっぷり。乾燥すると葉が硬くなり辛くなります。',
   fert: '元肥のみでほぼ足りる。2回目の間引き後に化成肥料をひとつまみ追肥すると葉が厚くなります。',
   keys: [
@@ -50,7 +50,7 @@ VEG_DB.push(
   ],
   troubles: [
     { name: '葉に細かい穴が無数', sign: '2〜3mmの丸い食害痕', cause: 'キスジノミハムシ（黒い小さな甲虫）', fix: '種まき直後からの防虫ネットで完全に防げます。発生後の駆除は困難。' },
-    { name: '葉が黄色くなる', sign: '下葉から黄変', cause: '肥料切れ、または水のやりすぎで根が傷んでいる', fix: '追肥を少量。プランターの受け皿に水を溜めっぱなしにしない。' },
+    { name: '葉が黄色くなる', sign: '下葉から黄変', cause: '肥料切れ、または水のやりすぎで根が傷んでいる', fix: '追肥を少量。水はけが悪い畝は高くして、雨のあとに水が溜まらないようにする。' },
     { name: '育ちが遅い・小さい', sign: 'いつまでも本葉が展開しない', cause: '間引き不足で密集している', fix: 'もったいながらず間引く。株間5cmは確保。' }
   ],
   companions: ['シュンギク（虫よけ）', 'リーフレタス'],
@@ -62,8 +62,8 @@ VEG_DB.push(
   id: 'spinach', name: 'ホウレンソウ', kana: 'ほうれんそう', family: 'ヒユ科', emoji: '🥬',
   category: '葉物',
   difficulty: 2, beginner: 4, cost: 4, freshness: 4, speed: 4,
-  place: ['plot', 'planter'], sun: 'half',
-  depth: 20, container: '65cmプランター（深さ20cm以上）。土15L。',
+  place: ['plot'], sun: 'half',
+  depth: 20,
   spacing: { plant: 5, row: 15 },
   perM2: 80,
   summary: '冬に穫る「寒締めホウレンソウ」は市販品と別物の甘さ。ただし土が酸性だと絶対に育ちません。',
@@ -90,8 +90,8 @@ VEG_DB.push(
       days: 40
     }
   ],
-  yieldNote: '65cmプランター1つで約20株（お浸し4〜5回分）',
-  marketValue: 800, valueUnit: 'プランター1つあたり',
+  yieldNote: '1m²あたり70〜80株（お浸し15回分ほど）',
+  marketValue: 3500, valueUnit: '1m²あたり',
   water: '過湿を嫌う。表面が乾いてからたっぷり。',
   fert: '元肥＋間引き後の追肥1〜2回。',
   keys: [
@@ -114,8 +114,8 @@ VEG_DB.push(
   id: 'mizuna', name: 'ミズナ（水菜）', kana: 'みずな', family: 'アブラナ科', emoji: '🥗',
   category: '葉物',
   difficulty: 1, beginner: 5, cost: 3, freshness: 4, speed: 5,
-  place: ['plot', 'planter'], sun: 'half',
-  depth: 15, container: '65cmプランターでOK。大株を狙うなら深さ25cm以上。',
+  place: ['plot'], sun: 'half',
+  depth: 15,
   spacing: { plant: 10, row: 20 },
   perM2: 50,
   summary: '関西の冬野菜の代表。サラダにも鍋にも使え、寒さに非常に強く年内から2月まで穫り続けられます。',
@@ -141,8 +141,8 @@ VEG_DB.push(
       days: 35
     }
   ],
-  yieldNote: '65cmプランターで小株25株、または大株4株',
-  marketValue: 700, valueUnit: 'プランター1つあたり',
+  yieldNote: '1m²あたり小株50株、または鍋用の大株12株',
+  marketValue: 2500, valueUnit: '1m²あたり',
   water: '名前のとおり水を好む。乾かしすぎない。',
   fert: '追肥1〜2回で株が大きく育つ。',
   keys: [
@@ -162,8 +162,8 @@ VEG_DB.push(
   id: 'shungiku', name: 'シュンギク（春菊）', kana: 'しゅんぎく', family: 'キク科', emoji: '🌿',
   category: '葉物',
   difficulty: 2, beginner: 4, cost: 4, freshness: 5, speed: 4,
-  place: ['plot', 'planter'], sun: 'half',
-  depth: 20, container: '65cmプランター（深さ20cm）。',
+  place: ['plot'], sun: 'half',
+  depth: 20,
   spacing: { plant: 15, row: 20 },
   perM2: 30,
   summary: '独特の香りで虫がほとんど付かない優等生。摘み取り収穫で冬中ずっと穫れます。鍋の必需品。',
@@ -190,8 +190,8 @@ VEG_DB.push(
       days: 50
     }
   ],
-  yieldNote: '10株から冬中で20〜30回分の摘み取り',
-  marketValue: 1500, valueUnit: '10株あたり（1袋200円×7〜8袋相当）',
+  yieldNote: '1株から冬中で2〜3回の摘み取り（10株で20〜30回分）',
+  marketValue: 150, valueUnit: '1株あたり',
   water: '普通。乾燥に弱いので夏まきは避ける。',
   fert: '摘み取りのたびに追肥すると脇芽の出がよくなる。',
   keys: [
@@ -213,12 +213,12 @@ VEG_DB.push(
   id: 'leaflettuce', name: 'リーフレタス（サニーレタス）', kana: 'りーふれたす', family: 'キク科', emoji: '🥗',
   category: '葉物',
   difficulty: 1, beginner: 5, cost: 4, freshness: 5, speed: 5,
-  place: ['plot', 'planter'], sun: 'half',
-  depth: 15, container: '65cmプランターに3〜4株、または直径20cm鉢に1株。',
+  place: ['plot'], sun: 'half',
+  depth: 15,
   spacing: { plant: 20, row: 25 },
   perM2: 16,
   summary: '外葉をかき取って使う「もぎ取りレタス」。1株で1〜2ヶ月間サラダが穫れ続けます。虫も付きにくい。',
-  whyGood: 'キク科なので青虫がほとんど来ない。玉レタスと違い結球を待たなくてよく、必要な分だけ収穫できるので失敗しようがありません。ベランダ栽培に最適。',
+  whyGood: 'キク科なので青虫がほとんど来ない。玉レタスと違い結球を待たなくてよく、必要な分だけ収穫できるので失敗しようがありません。畝の縁の空きスペースにも植えられます。',
   plans: [
     {
       id: 'autumn-seedling', label: '秋・苗から【最推奨】', start: 'seedling', difficulty: 1,
@@ -253,7 +253,7 @@ VEG_DB.push(
     }
   ],
   yieldNote: '1株から20〜30枚。4株あればサラダが途切れません',
-  marketValue: 1200, valueUnit: '4株あたり（1袋150円×8袋相当）',
+  marketValue: 300, valueUnit: '1株あたり',
   water: '乾燥に弱い。葉物の中では水を好みます。',
   fert: 'かき取り収穫のたびに液肥を少量。',
   keys: [
@@ -276,8 +276,8 @@ VEG_DB.push(
   id: 'chingensai', name: 'チンゲンサイ', kana: 'ちんげんさい', family: 'アブラナ科', emoji: '🥬',
   category: '葉物',
   difficulty: 1, beginner: 5, cost: 3, freshness: 3, speed: 5,
-  place: ['plot', 'planter'], sun: 'half',
-  depth: 15, container: '65cmプランターに8〜10株。',
+  place: ['plot'], sun: 'half',
+  depth: 15,
   spacing: { plant: 15, row: 20 },
   perM2: 35,
   summary: '40日で株元がぷっくり膨らむ中国野菜。生育が早く、炒め物にすぐ使えます。',
@@ -302,8 +302,8 @@ VEG_DB.push(
       days: 40
     }
   ],
-  yieldNote: '65cmプランターで8〜10株',
-  marketValue: 500, valueUnit: 'プランター1つあたり',
+  yieldNote: '1m²あたり30〜35株',
+  marketValue: 2100, valueUnit: '1m²あたり',
   water: '普通。',
   fert: '間引き後に1回追肥。',
   keys: [
@@ -323,8 +323,8 @@ VEG_DB.push(
   id: 'rucola', name: 'ルッコラ', kana: 'るっこら', family: 'アブラナ科', emoji: '🌿',
   category: '葉物',
   difficulty: 1, beginner: 5, cost: 5, freshness: 5, speed: 5,
-  place: ['plot', 'planter'], sun: 'half',
-  depth: 15, container: '小さめのプランターでもOK。',
+  place: ['plot'], sun: 'half',
+  depth: 15,
   spacing: { plant: 8, row: 15 },
   perM2: 80,
   summary: '20〜30日で穫れる最速級。ゴマの香りとピリッとした辛味は買うと高いのに、育てるのは超簡単。',
@@ -350,8 +350,8 @@ VEG_DB.push(
       days: 25
     }
   ],
-  yieldNote: 'プランター1つで市販パック10〜15袋分',
-  marketValue: 2000, valueUnit: 'プランター1つあたり',
+  yieldNote: '1m²あたり市販パック30〜40袋分（かき取りで3〜4回）',
+  marketValue: 5000, valueUnit: '1m²あたり',
   water: '乾かしすぎると辛味が強くなりすぎる。',
   fert: 'ほぼ不要。元肥だけで育つ。',
   keys: [
@@ -371,8 +371,8 @@ VEG_DB.push(
   id: 'broccoli', name: 'ブロッコリー', kana: 'ぶろっこりー', family: 'アブラナ科', emoji: '🥦',
   category: '葉物',
   difficulty: 2, beginner: 4, cost: 5, freshness: 4, speed: 2,
-  place: ['plot', 'planter'], sun: 'full',
-  depth: 30, container: '直径30cm・深さ30cm以上の大型鉢に1株。65cmプランターなら1〜2株が限界。',
+  place: ['plot'], sun: 'full',
+  depth: 30,
   spacing: { plant: 45, row: 45 },
   perM2: 4,
   summary: '中央の大きな花蕾を穫った後、脇から小さな側花蕾が春まで次々出る「長距離ランナー」。コスパ抜群。',
@@ -438,11 +438,11 @@ VEG_DB.push(
   category: '葉物',
   difficulty: 3, beginner: 3, cost: 4, freshness: 3, speed: 1,
   place: ['plot'], sun: 'full',
-  depth: 30, container: '大型鉢（直径30cm以上）に1株なら可。基本は地植え向き。',
+  depth: 30,
   spacing: { plant: 40, row: 45 },
   perM2: 5,
   summary: '結球するまで4ヶ月。場所と時間を占有しますが、無農薬キャベツの甘さは格別。',
-  whyGood: '冬キャベツは甘みが強く、外葉まで使えます。ただし「面積あたりの得」で見るとブロッコリーに劣るので、3畳の畑では優先度は中程度。',
+  whyGood: '冬キャベツは甘みが強く、外葉まで使えます。ただし「面積あたりの得」で見るとブロッコリーに劣るので、狭い畑では優先度は中程度。',
   plans: [
     {
       id: 'autumn-seedling', label: '秋・苗から（冬どり）【推奨】', start: 'seedling', difficulty: 3,
@@ -473,7 +473,7 @@ VEG_DB.push(
     '防虫ネットを最後まで外さない。キャベツは青虫の最大の標的です',
     '結球が始まったら追肥をやめる（遅い追肥は裂球の原因）',
     '玉を手で押して硬く締まっていたら収穫適期',
-    '3畳の畑では1〜2株が現実的。場所を取るので欲張らない'
+    '畝2本程度の畑では1〜2株が現実的。場所を取るので欲張らない'
   ],
   troubles: [
     { name: '玉が巻かない', sign: '葉が開いたまま', cause: '定植が遅い／肥料不足／株間が狭い', fix: '9月中旬までの定植を厳守し、追肥する。' },
@@ -490,7 +490,7 @@ VEG_DB.push(
   category: '葉物',
   difficulty: 4, beginner: 2, cost: 4, freshness: 3, speed: 2,
   place: ['plot'], sun: 'full',
-  depth: 30, container: '地植え推奨。プランターなら深型に1株。',
+  depth: 30,
   spacing: { plant: 45, row: 50 },
   perM2: 4,
   summary: '「まき時が1〜2週間ずれると結球しない」時間にシビアな作物。上級者への登竜門。',
