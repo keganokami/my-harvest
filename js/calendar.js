@@ -231,6 +231,15 @@ function openVeg(id) {
   </div>`;
 
   /* 栽培条件 */
+  h += `<h3 class="sub">畝での植え付け</h3>`;
+  h += `<div class="table-wrap"><table class="data">
+    <thead><tr><th>畝幅</th><th class="num">条数</th><th class="num">畝1mあたり</th></tr></thead><tbody>`
+    + widthComparison(v).map(c =>
+        `<tr><td>${c.bedW}cm</td><td class="num"><b>${c.rows}条</b></td><td class="num">${c.perMeter}株</td></tr>`).join('')
+    + `</tbody></table></div>
+    <div class="tiny" style="margin:5px 0 12px">株間${v.spacing.plant}cm・条間${v.spacing.row}cm から算出。
+    畝を広くすると条数が増え、同じ長さでより多く植えられます。</div>`;
+
   h += `<h3 class="sub">栽培スペース</h3>`;
   h += `<div class="table-wrap"><table class="data">
     <tr><th style="width:34%">株間 × 条間</th><td>${v.spacing.plant}cm × ${v.spacing.row}cm</td></tr>

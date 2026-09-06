@@ -6,7 +6,8 @@ const APP = {
   today: new Date(),
   nowDek: 0,
   crops: [],
-  sim: null
+  sim: null,
+  simWhen: undefined   // 平面図で表示している旬（未設定なら「いま」）
 };
 
 /* ---------------- タブ ---------------- */

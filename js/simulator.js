@@ -53,6 +53,32 @@ function bedLengthFor(v, qty, bedW) {
   return Math.ceil(qty / rows) * v.spacing.plant;
 }
 
+/** 畝の中での各条の位置（cm・畝の左端からの距離）。畝幅の中央に振り分ける */
+function rowPositions(v, bedW) {
+  const rows = rowsInBed(v, bedW);
+  const span = (rows - 1) * v.spacing.row;
+  const left = Math.max(BED_MARGIN / 2, (bedW - span) / 2);
+  const out = [];
+  for (let i = 0; i < rows; i++) out.push(left + i * v.spacing.row);
+  return out;
+}
+
+/** 畝幅を変えると条数と株数がどう変わるか */
+const BED_WIDTH_OPTIONS = [60, 70, 90, 120];
+function widthComparison(v, bedLen) {
+  return BED_WIDTH_OPTIONS.map(w => {
+    const rows = rowsInBed(v, w);
+    return {
+      bedW: w,
+      rows: rows,
+      perMeter: rows * Math.floor(100 / v.spacing.plant),
+      perBed: bedLen ? qtyForLength(v, bedLen, w) : null,
+      // 畝幅に対して株が収まりきらない（条間が畝幅を超える）場合の注意
+      tight: v.spacing.row > w - BED_MARGIN / 2
+    };
+  });
+}
+
 /** 畝の長さ len(cm) に何株植えられるか */
 function qtyForLength(v, len, bedW) {
   const rows = rowsInBed(v, bedW);
@@ -178,6 +204,16 @@ function updateSimHint() {
   document.getElementById('simQty').value = Math.max(1, Math.min(cap, capQty(v, cap)));
   const qty = parseInt(document.getElementById('simQty').value, 10) || 1;
   hint += ` ／ この株数なら畝の <b>${bedLengthFor(v, qty, lay.bedW)}cm</b> を使います`;
+
+  // 畝幅を変えると何条・何株になるか
+  hint += `<div class="wcmp"><div class="wcmp-t">${esc(v.name)}は畝幅でこう変わります</div><table>
+    <tr><th>畝幅</th>${widthComparison(v, lay.len).map(c =>
+      `<th class="${c.bedW === lay.bedW ? 'cur' : ''}">${c.bedW}cm</th>`).join('')}</tr>
+    <tr><th>条数</th>${widthComparison(v, lay.len).map(c =>
+      `<td class="${c.bedW === lay.bedW ? 'cur' : ''}">${c.rows}条</td>`).join('')}</tr>
+    <tr><th>畝1本(${lay.len}cm)</th>${widthComparison(v, lay.len).map(c =>
+      `<td class="${c.bedW === lay.bedW ? 'cur' : ''}">${c.perBed}株</td>`).join('')}</tr>
+    </table><div class="tiny">条間${v.spacing.row}cm・株間${v.spacing.plant}cm から算出。畝幅は「① 敷地と畝の設定」で変えられます。</div></div>`;
   document.getElementById('simHint').innerHTML = hint;
 }
 
@@ -423,36 +459,12 @@ function renderSim() {
 
   let r = '';
 
-  /* 今の畝の姿（平面図） */
-  r += '<h2 class="sec">④ いまの畝の使われ方</h2>';
-  r += `<div class="tiny" style="margin:-6px 0 8px">${dekLabel(APP.nowDek)}時点。畝の先頭から順に詰めた配置です。</div>`;
-  for (let b = 0; b < lay.count; b++) {
-    const pk = bedPacking(b, APP.nowDek);
-    r += `<div class="bedmap">
-      <div class="bm-head">畝${b + 1} <span class="tiny">幅${lay.bedW}cm × 長さ${lay.len}cm ／ 使用 ${Math.round(pk.used)}cm</span></div>
-      <div class="bm-bar">`;
-    if (!pk.segs.length) {
-      r += `<div class="bm-empty">空き（${lay.len}cm）</div>`;
-    } else {
-      pk.segs.forEach((sg, i) => {
-        const pct = Math.min(100, sg.len / lay.len * 100);
-        r += `<div class="bm-seg" style="width:${pct}%;background:${BED_COLORS[i % BED_COLORS.length]}"
-          title="${esc(sg.v.name)} ${sg.len}cm">${sg.v.emoji}</div>`;
-      });
-      const rest = lay.len - pk.used;
-      if (rest > 0) r += `<div class="bm-rest" style="width:${rest / lay.len * 100}%">空き</div>`;
-    }
-    r += '</div>';
-    if (pk.segs.length) {
-      r += '<div class="bm-legend">';
-      pk.segs.forEach((sg, i) => {
-        r += `<span><i style="background:${BED_COLORS[i % BED_COLORS.length]}"></i>${esc(sg.v.name)}
-          ${Math.round(sg.start)}〜${Math.round(sg.start + sg.len)}cm（${sg.rows}条）</span>`;
-      });
-      r += '</div>';
-    }
-    r += '</div>';
-  }
+  /* 畑の平面図 */
+  r += '<h2 class="sec">④ 畑の平面図</h2>';
+  r += `<div class="tiny" style="margin:-6px 0 8px">
+    畝・通路・株の位置を実寸で表示しています。スライダーで時期を動かすと、その旬の畑の姿になります。
+    株は畝の先頭から順に詰めた配置です。</div>`;
+  r += '<div id="simPlot"></div>';
 
   /* 警告 */
   const errs = warns.filter(w => w.level === 'error');
@@ -568,9 +580,153 @@ function renderSim() {
   r += '</div>';
 
   box.innerHTML = r;
+  renderPlotView();
   box.querySelectorAll('tr[data-veg]').forEach(tr => {
     tr.style.cursor = 'pointer';
     tr.setAttribute('role', 'button');
     tr.onclick = () => openVeg(tr.dataset.veg);
   });
+}
+
+/* ---------------------------------------------------------
+   畑の平面図（上から見た図）
+   畝・通路・株の位置を実寸で描く。時期を変えて年間の姿を確認できる。
+   --------------------------------------------------------- */
+const PLOT_PAD = { l: 30, t: 30, r: 10, b: 24 };
+const PLOT_VIEW_W = 360;
+const MAX_DOTS = 900;   // これを超えるときは点ではなく条の線で描く
+
+function plotScale(lay) {
+  const s = APP.sim;
+  const usable = PLOT_VIEW_W - PLOT_PAD.l - PLOT_PAD.r;
+  return s.plotW > 0 ? usable / s.plotW : 1;
+}
+
+function renderPlotSVG(dekad) {
+  const s = APP.sim;
+  const lay = bedLayout(s);
+  if (!lay.count) return '<div class="note red" style="margin:0"><strong>畝がありません</strong>敷地の幅を広げるか、畝幅・通路幅を小さくしてください。</div>';
+
+  const k = plotScale(lay);
+  const W = PLOT_VIEW_W;
+  const H = PLOT_PAD.t + s.plotD * k + PLOT_PAD.b;
+  const x0 = PLOT_PAD.l, y0 = PLOT_PAD.t;
+  const cm = v => v * k;
+
+  let g = '';
+
+  /* 敷地全体（＝通路の地色） */
+  g += `<rect x="${x0}" y="${y0}" width="${cm(s.plotW)}" height="${cm(s.plotD)}"
+         fill="var(--bg-sub)" stroke="var(--line)" stroke-width="1"/>`;
+  g += `<pattern id="pathHatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+          <line x1="0" y1="0" x2="0" y2="6" stroke="var(--line)" stroke-width="2"/></pattern>`;
+  g += `<rect x="${x0}" y="${y0}" width="${cm(s.plotW)}" height="${cm(s.plotD)}" fill="url(#pathHatch)" opacity=".5"/>`;
+
+  /* 方位と寸法 */
+  g += `<text x="${x0 + cm(s.plotW) / 2}" y="14" text-anchor="middle" font-size="10" fill="var(--fg-mute)">↑ 北</text>`;
+  g += `<text x="${x0 + cm(s.plotW) / 2}" y="${H - 8}" text-anchor="middle" font-size="9" fill="var(--fg-faint)">敷地の幅 ${s.plotW}cm</text>`;
+  g += `<text x="10" y="${y0 + cm(s.plotD) / 2}" text-anchor="middle" font-size="9" fill="var(--fg-faint)"
+          transform="rotate(-90 10 ${y0 + cm(s.plotD) / 2})">奥行き ${s.plotD}cm</text>`;
+
+  /* 目盛り（50cmごと） */
+  for (let d = 0; d <= s.plotD; d += 50) {
+    const y = y0 + cm(d);
+    g += `<line x1="${x0 - 4}" y1="${y}" x2="${x0}" y2="${y}" stroke="var(--fg-faint)" stroke-width="1"/>`;
+    if (d % 100 === 0) g += `<text x="${x0 - 6}" y="${y + 3}" text-anchor="end" font-size="8" fill="var(--fg-faint)">${d}</text>`;
+  }
+
+  /* 各畝 */
+  let legend = [];
+  let dotBudget = MAX_DOTS;
+  for (let b = 0; b < lay.count; b++) {
+    const bx = x0 + cm(b * (s.bedW + s.pathW));
+    const bw = cm(s.bedW);
+    g += `<rect x="${bx}" y="${y0}" width="${bw}" height="${cm(s.plotD)}"
+           fill="var(--bg-card)" stroke="var(--green)" stroke-width="1.2" rx="2"/>`;
+    g += `<text x="${bx + bw / 2}" y="${y0 - 5}" text-anchor="middle" font-size="9" font-weight="700" fill="var(--green)">畝${b + 1}</text>`;
+
+    const pk = bedPacking(b, dekad);
+    pk.segs.forEach((sg, i) => {
+      const color = BED_COLORS[i % BED_COLORS.length];
+      const over = sg.start + sg.len > s.plotD;
+      const drawLen = Math.min(sg.len, Math.max(0, s.plotD - sg.start));
+      if (drawLen <= 0) return;
+      g += `<rect x="${bx}" y="${y0 + cm(sg.start)}" width="${bw}" height="${cm(drawLen)}"
+             fill="${color}" opacity="${over ? '.35' : '.18'}"
+             stroke="${over ? 'var(--red)' : color}" stroke-width="${over ? 1.5 : 0.8}"
+             ${over ? 'stroke-dasharray="4 2"' : ''}/>`;
+
+      /* 株の点 */
+      const rows = rowPositions(sg.v, s.bedW);
+      const perRow = Math.ceil(sg.it.qty / rows.length);
+      const total = rows.length * perRow;
+      const r = Math.max(1.1, Math.min(cm(sg.v.spacing.plant) / 2.6, cm(sg.v.spacing.row) / 2.6, 5));
+      if (total <= dotBudget) {
+        dotBudget -= total;
+        let n = 0;
+        for (let j = 0; j < perRow; j++) {
+          const py = sg.start + j * sg.v.spacing.plant + sg.v.spacing.plant / 2;
+          if (py > s.plotD) break;
+          rows.forEach(rx => {
+            if (n++ >= sg.it.qty) return;
+            g += `<circle cx="${(bx + cm(rx)).toFixed(1)}" cy="${(y0 + cm(py)).toFixed(1)}" r="${r.toFixed(1)}" fill="${color}"/>`;
+          });
+        }
+      } else {
+        /* 株が多すぎるときは条の線で表す */
+        rows.forEach(rx => {
+          g += `<line x1="${(bx + cm(rx)).toFixed(1)}" y1="${y0 + cm(sg.start)}"
+                 x2="${(bx + cm(rx)).toFixed(1)}" y2="${y0 + cm(sg.start + drawLen)}"
+                 stroke="${color}" stroke-width="${Math.max(1.5, r)}" stroke-linecap="round" opacity=".85"/>`;
+        });
+      }
+
+      legend.push({ bed: b + 1, v: sg.v, color, seg: sg, over });
+    });
+
+    /* 空いている部分に「空き」と入れる */
+    const rest = s.plotD - pk.used;
+    if (rest > 25) {
+      const ry = y0 + cm(pk.used) + cm(rest) / 2;
+      g += `<text x="${bx + bw / 2}" y="${ry}" text-anchor="middle" font-size="9"
+             fill="var(--fg-faint)">空き ${Math.round(rest)}cm</text>`;
+    }
+  }
+
+  let html = `<svg viewBox="0 0 ${W} ${H.toFixed(0)}" class="plotsvg" role="img"
+     aria-label="畑の平面図">${g}</svg>`;
+
+  if (legend.length) {
+    html += '<div class="plot-legend">';
+    legend.forEach(L => {
+      html += `<span${L.over ? ' class="over"' : ''}><i style="background:${L.color}"></i>
+        畝${L.bed} ${esc(L.v.name)} ${L.seg.it.qty}株
+        <b>${L.seg.rows}条</b>／${Math.round(L.seg.start)}〜${Math.round(L.seg.start + L.seg.len)}cm${L.over ? '（はみ出し）' : ''}</span>`;
+    });
+    html += '</div>';
+  } else {
+    html += '<div class="tiny" style="margin-top:6px">この時期は畝が空いています。</div>';
+  }
+  return html;
+}
+
+function renderPlotView() {
+  const box = document.getElementById('simPlot');
+  if (!box) return;
+  const when = APP.simWhen === undefined ? APP.nowDek : APP.simWhen;
+  const [m, j] = undek(when);
+  box.innerHTML = `
+    <div class="plot-when">
+      <div class="pw-head">
+        <b>${m}月${JUN_NAME[j - 1]}</b> の畑
+        ${when === APP.nowDek ? '<span class="pill green">いま</span>' : '<button class="btn sm ghost" id="plotNow">いまに戻す</button>'}
+      </div>
+      <input type="range" id="plotWhen" min="0" max="35" value="${when}" step="1" aria-label="時期">
+      <div class="pw-scale"><span>1月</span><span>4月</span><span>7月</span><span>10月</span><span>12月</span></div>
+    </div>
+    <div class="plotwrap">${renderPlotSVG(when)}</div>`;
+  const sl = document.getElementById('plotWhen');
+  if (sl) sl.oninput = () => { APP.simWhen = parseInt(sl.value, 10); renderPlotView(); };
+  const nb = document.getElementById('plotNow');
+  if (nb) nb.onclick = () => { APP.simWhen = APP.nowDek; renderPlotView(); };
 }

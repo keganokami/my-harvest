@@ -373,7 +373,54 @@ table.data td.num, table.data th.num { text-align: right; font-variant-numeric: 
 }
 .slot.conflict { background: var(--red-light); border: 1px solid var(--red); }
 
-/* ---------- 畝の平面図 ---------- */
+/* ---------- 畑の平面図 ---------- */
+.plotwrap {
+  background: var(--bg-card); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 10px 8px 12px; overflow-x: auto;
+}
+.plotsvg { width: 100%; height: auto; display: block; max-width: 520px; margin: 0 auto; }
+.plot-legend {
+  display: flex; flex-direction: column; gap: 4px; margin-top: 10px;
+  font-size: 11.5px; color: var(--fg-mute); padding: 0 4px;
+}
+.plot-legend span { display: flex; align-items: center; gap: 6px; }
+.plot-legend i { width: 11px; height: 11px; border-radius: 3px; display: block; flex: 0 0 auto; }
+.plot-legend .over { color: var(--red); }
+
+.plot-when {
+  background: var(--bg-card); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 11px 13px 9px; margin-bottom: 10px;
+}
+.plot-when .pw-head {
+  display: flex; align-items: center; gap: 9px; flex-wrap: wrap;
+  font-size: 14px; margin-bottom: 8px;
+}
+.plot-when input[type=range] {
+  width: 100%; margin: 0; padding: 0; min-height: 0;
+  accent-color: var(--green); background: none; border: none;
+  -webkit-appearance: auto; appearance: auto; height: 28px;
+}
+.plot-when .pw-scale {
+  display: flex; justify-content: space-between;
+  font-size: 10px; color: var(--fg-faint); margin-top: -2px;
+}
+
+/* ---------- 畝幅の比較 ---------- */
+.wcmp { margin-top: 9px; border-top: 1px dashed var(--line); padding-top: 8px; }
+.wcmp-t { font-size: 12px; font-weight: 700; color: var(--fg); margin-bottom: 5px; }
+.wcmp table { border-collapse: collapse; width: 100%; max-width: 420px; font-size: 12px; }
+.wcmp th, .wcmp td {
+  border: 1px solid var(--line); padding: 4px 6px; text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.wcmp tr > th:first-child {
+  text-align: left; background: var(--bg-sub); font-weight: 600;
+  font-size: 11px; white-space: nowrap;
+}
+.wcmp .cur { background: var(--green-light); color: var(--green-dark); font-weight: 700; }
+.wcmp .tiny { margin-top: 4px; }
+
+/* ---------- 畝の平面図（帯） ---------- */
 .bedmap {
   background: var(--bg-card); border: 1px solid var(--line);
   border-radius: 10px; padding: 11px 12px; margin-bottom: 10px;
