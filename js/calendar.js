@@ -246,7 +246,6 @@ function openVeg(id) {
     <tr><th>必要な土の深さ</th><td>${v.depth}cm 以上</td></tr>
     <tr><th>1m²あたりの株数</th><td>約 ${v.perM2} 株</td></tr>
     <tr><th>収量の目安</th><td>${esc(v.yieldNote)}</td></tr>
-    <tr><th>金額の目安</th><td>約 ${v.marketValue.toLocaleString()}円 ／ ${esc(v.valueUnit)}</td></tr>
   </table></div>`;
 
   /* トラブル */

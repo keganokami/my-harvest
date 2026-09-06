@@ -607,36 +607,34 @@ function renderLogSummary() {
   const keys = Object.keys(actual);
   h += '<h3>🧺 収穫の実績</h3>';
   if (!keys.length) {
-    h += '<div class="tiny">まだ収穫の記録がありません。各栽培の「記録を追加」で収穫量を入力すると、ここに累計と金額換算が出ます。</div>';
+    h += '<div class="tiny">まだ収穫の記録がありません。各栽培の「記録を追加」で収穫量を入力すると、ここに累計が出ます。</div>';
   } else {
-    let total = 0;
-    h += '<div class="table-wrap"><table class="data"><thead><tr><th>野菜</th><th class="num">収穫回数</th><th class="num">累計</th><th>期間</th><th class="num">金額換算</th></tr></thead><tbody>';
+    let times = 0;
+    h += '<div class="table-wrap"><table class="data"><thead><tr><th>野菜</th><th class="num">収穫回数</th><th class="num">累計</th><th class="hide-sm">期間</th></tr></thead><tbody>';
     keys.forEach(k => {
       const v = byId(k), a = actual[k];
-      const money = Math.round(a.qty * harvestPriceOf(v));
-      total += money;
+      times += a.times;
       h += `<tr><td>${v.emoji} ${esc(v.name)}</td><td class="num">${a.times}回</td>
-        <td class="num">${a.qty}${esc(a.unit)}</td><td class="tiny">${a.first} 〜 ${a.last}</td>
-        <td class="num">${money.toLocaleString()}円</td></tr>`;
+        <td class="num"><b>${a.qty}${esc(a.unit)}</b></td><td class="tiny hide-sm">${a.first} 〜 ${a.last}</td></tr>`;
     });
-    h += `</tbody><tfoot><tr><th colspan="4">合計</th><th class="num">${total.toLocaleString()}円</th></tr></tfoot></table></div>`;
-    h += `<div class="tiny" style="margin-top:6px">※スーパーの一般的な価格での換算です。</div>`;
+    h += `</tbody><tfoot><tr><th>${keys.length}種</th><th class="num">${times}回</th><th colspan="2"></th></tr></tfoot></table></div>`;
   }
 
-  /* 見込み */
-  if (APP.crops.length) {
-    let sum = 0;
-    h += '<h3 style="margin-top:22px">📈 これからの収穫見込み</h3><div class="table-wrap"><table class="data"><thead><tr><th>野菜</th><th>収穫期</th><th>収量の目安</th><th class="num">金額換算</th></tr></thead><tbody>';
-    APP.crops.filter(c => !c.ended).forEach(c => {
+  /* これからの収穫 */
+  const upcoming2 = APP.crops.filter(c => !c.ended);
+  if (upcoming2.length) {
+    h += '<h3 style="margin-top:22px">📈 これからの収穫</h3><div class="table-wrap"><table class="data"><thead><tr><th>収穫期</th><th>野菜</th><th class="num">株数</th><th>収量の目安</th></tr></thead><tbody>';
+    upcoming2.map(c => {
       const v = byId(c.vegId);
       const p = v.plans.find(x => x.id === c.planId) || v.plans[0];
       const hv = harvestStep(p);
-      const amount = valuePerPlant(v) * c.qty;
-      sum += amount;
-      h += `<tr><td>${v.emoji} ${esc(v.name)}</td><td>${hv ? rangeLabel(hv.from, hv.to) : '—'}</td>
-        <td class="tiny">${esc(v.yieldNote)}</td><td class="num">約 ${amount.toLocaleString()}円</td></tr>`;
+      return { c, v, hv, at: hv ? dek(hv.from[0], hv.from[1]) : 0 };
+    }).sort((a, b) => dekDistance(APP.nowDek, a.at) - dekDistance(APP.nowDek, b.at)).forEach(x => {
+      h += `<tr><td class="tiny"><b>${x.hv ? rangeLabel(x.hv.from, x.hv.to) : '—'}</b></td>
+        <td>${x.v.emoji} ${esc(x.v.name)}</td><td class="num">${x.c.qty}</td>
+        <td class="tiny">${esc(x.v.yieldNote)}</td></tr>`;
     });
-    h += `</tbody><tfoot><tr><th colspan="3">合計</th><th class="num">約 ${sum.toLocaleString()}円</th></tr></tfoot></table></div>`;
+    h += '</tbody></table></div>';
   }
 
   /* バックアップ */

@@ -215,7 +215,7 @@ function renderNow() {
       (hv ? `<br>収穫：${rangeLabel(hv.from, hv.to)}` : '') + `</div>` +
       `<div class="vmeta">
         <span class="pill green">やさしさ ${stars(x.v.beginner)}</span>
-        <span class="pill accent">${x.v.marketValue.toLocaleString()}円/${esc(x.v.valueUnit)}</span>
+        <span class="pill accent">おトク度 ${stars(x.v.cost)}</span>
       </div>`;
     c.onclick = () => openVeg(x.v.id);
     list.appendChild(c);

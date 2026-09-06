@@ -5,7 +5,6 @@
    「株間 × 条数」で畝を何cm使うかを計算して作付けを検証する。
    ========================================================= */
 
-const SEED_COST = { seed: 300, seedling: 180, bulb: 70, tuber: 110, slip: 55, root: 320 };
 const BED_MARGIN = 20;     // 畝の両肩に空ける余裕（左右10cmずつ）
 
 /** 一般的な家庭で消費しきれる現実的な株数の上限（自動プラン用） */
@@ -516,42 +515,28 @@ function renderSim() {
   r += '</tbody></table></div>';
   r += '<div class="tiny" style="margin-top:6px">オレンジのマスが収穫期です。空白は畝が空いている期間 — ここを埋めるほど年間の収量が上がります。</div>';
 
-  /* 収支 */
-  let value = 0, cost = 0;
+  /* 収穫の見込み（何が・いつ・どれだけ穫れるか） */
   const rows = s.items.map(it => {
     const v = byId(it.vegId);
     const p = v.plans.find(x => x.id === it.planId);
-    const val = valuePerPlant(v) * it.qty;
-    const c = p.start === 'seed' ? SEED_COST.seed : (SEED_COST[p.start] || 150) * it.qty;
-    value += val; cost += c;
-    return { v, p, it, val, c, hv: harvestStep(p) };
-  }).sort((a, b) => b.val - a.val);
+    const hv = harvestStep(p);
+    return { v, p, it, hv, at: hv ? dek(hv.from[0], hv.from[1]) : 0 };
+  }).sort((a, b) => dekDistance(APP.nowDek, a.at) - dekDistance(APP.nowDek, b.at));
 
-  r += '<h2 class="sec">⑦ 年間の収穫と収支の試算</h2>';
-  r += '<div class="grid c3" style="margin-bottom:14px">';
-  r += `<div class="card center"><div class="tiny">収穫の金額換算</div><div style="font-size:26px;font-weight:700;color:var(--green)">${value.toLocaleString()}<span style="font-size:14px">円</span></div></div>`;
-  r += `<div class="card center"><div class="tiny">種苗費</div><div style="font-size:26px;font-weight:700;color:var(--earth)">${cost.toLocaleString()}<span style="font-size:14px">円</span></div></div>`;
-  r += `<div class="card center"><div class="tiny">差引</div><div style="font-size:26px;font-weight:700;color:var(--accent)">${(value - cost).toLocaleString()}<span style="font-size:14px">円</span></div></div>`;
-  r += '</div>';
-
-  r += '<div class="table-wrap"><table class="data"><thead><tr><th>場所</th><th>野菜</th><th class="hide-sm">作型</th><th class="num">株数</th><th class="num">畝の使用</th><th class="hide-sm">収穫期</th><th class="num">金額換算</th></tr></thead><tbody>';
+  r += '<h2 class="sec">⑦ 収穫の見込み</h2>';
+  r += '<div class="tiny" style="margin:-6px 0 8px">収穫期が近い順に並べています。行をタップすると育て方が開きます。</div>';
+  r += '<div class="table-wrap"><table class="data"><thead><tr><th>収穫期</th><th>野菜</th><th class="num">株数</th><th class="hide-sm">場所</th><th>収量の目安</th></tr></thead><tbody>';
   rows.forEach(x => {
     const placeLabel = '畝' + (parseInt(x.it.place.slice(3), 10) + 1);
-    const useLabel = bedLengthFor(x.v, x.it.qty, lay.bedW) + 'cm';
     r += `<tr data-veg="${x.v.id}">
-      <td class="tiny">${placeLabel}</td>
+      <td class="tiny"><b>${x.hv ? rangeLabel(x.hv.from, x.hv.to) : '—'}</b></td>
       <td>${x.v.emoji} ${esc(x.v.name)}</td>
-      <td class="tiny hide-sm">${START_TYPE[x.p.start].icon} ${esc(x.p.label)}</td>
       <td class="num">${x.it.qty}</td>
-      <td class="num tiny">${useLabel}</td>
-      <td class="tiny hide-sm">${x.hv ? rangeLabel(x.hv.from, x.hv.to) : '—'}</td>
-      <td class="num">${x.val.toLocaleString()}</td>
+      <td class="tiny hide-sm">${placeLabel}</td>
+      <td class="tiny">${esc(x.v.yieldNote)}</td>
     </tr>`;
   });
   r += '</tbody></table></div>';
-  r += `<div class="tiny" style="margin-top:8px">
-    ※金額換算はスーパーでの一般的な小売価格に基づく概算で、栽培が順調にいった場合の目安です。
-    土づくりの資材や道具などの初期費用（1〜2万円）は含みません。</div>`;
 
   /* 作業カレンダー */
   r += '<h2 class="sec">⑧ このプランの作業カレンダー</h2>';
