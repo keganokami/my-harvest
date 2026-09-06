@@ -444,6 +444,7 @@ function renderLogTab() {
         </div>
         <div class="crop-actions vertical">
           <button class="btn sm" data-act="toggleform" data-crop="${c.id}">記録を追加</button>
+          <button class="btn sm ghost" data-act="edit" data-crop="${c.id}">編集</button>
           <button class="btn sm ghost" data-act="end" data-crop="${c.id}">${c.ended ? '再開' : '終了にする'}</button>
           <button class="btn sm danger" data-act="del" data-crop="${c.id}">削除</button>
         </div>
@@ -454,6 +455,24 @@ function renderLogTab() {
       d.msgs.slice(0, 8).forEach(m => {
         h += `<div class="note ${m.level}" style="margin:8px 0"><strong>${esc(m.title)}</strong>${m.body}</div>`;
       });
+
+      /* 登録内容の編集 */
+      h += `<div class="entry-form" data-editcrop="${c.id}" hidden>
+        <h3 class="sub">✏️ 登録内容を直す</h3>
+        <div class="row">
+          <div class="field"><label class="f">作型</label>
+            <select data-c="planId">${v.plans.map(x =>
+              `<option value="${x.id}"${x.id === p.id ? ' selected' : ''}>${START_TYPE[x.start].icon} ${esc(x.label)}</option>`).join('')}</select></div>
+          <div class="field"><label class="f">種まき／植付けをした日</label>
+            <input type="date" data-c="date" value="${c.date}"></div>
+          <div class="field"><label class="f">株数</label>
+            <input type="number" data-c="qty" value="${c.qty}" min="1" max="999" inputmode="numeric"></div>
+        </div>
+        <div class="row btnrow">
+          <button class="btn sm" data-act="savecrop" data-crop="${c.id}">保存する</button>
+          <button class="btn sm ghost" data-act="editclose" data-crop="${c.id}">やめる</button>
+        </div>
+      </div>`;
 
       /* 入力フォーム */
       h += `<div class="entry-form" data-form="${c.id}" hidden>
@@ -537,6 +556,22 @@ function bindLogEvents() {
       if (act === 'toggleform') {
         const f = list.querySelector(`[data-form="${c.id}"]`);
         if (f) f.hidden = !f.hidden;
+      } else if (act === 'edit') {
+        const f = list.querySelector(`[data-editcrop="${c.id}"]`);
+        if (f) f.hidden = !f.hidden;
+      } else if (act === 'editclose') {
+        const f = list.querySelector(`[data-editcrop="${c.id}"]`);
+        if (f) f.hidden = true;
+      } else if (act === 'savecrop') {
+        const f = list.querySelector(`[data-editcrop="${c.id}"]`);
+        if (!f) return;
+        const g = k => f.querySelector(`[data-c="${k}"]`);
+        const d = g('date').value;
+        if (!d) { alert('開始日を入力してください。'); return; }
+        c.planId = g('planId').value;
+        c.date = d;
+        c.qty = Math.max(1, Math.min(999, parseInt(g('qty').value, 10) || 1));
+        saveCrops();
       } else if (act === 'del') {
         if (!confirm(`「${byId(c.vegId).name}」の記録をすべて削除します。よろしいですか？`)) return;
         APP.crops = APP.crops.filter(x => x.id !== c.id);

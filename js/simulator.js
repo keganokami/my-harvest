@@ -396,6 +396,70 @@ function autoPlan() {
 }
 
 /* ---------------------------------------------------------
+   割り当ての編集
+   --------------------------------------------------------- */
+
+/** 同じ畝の中で、ひとつ前／後ろの作付けと入れ替える（平面図の並び順が変わる） */
+function moveItem(idx, dir) {
+  const list = APP.sim.items;
+  const it = list[idx];
+  if (!it) return false;
+  let j = idx + dir;
+  while (j >= 0 && j < list.length && list[j].place !== it.place) j += dir;
+  if (j < 0 || j >= list.length) return false;
+  list[idx] = list[j];
+  list[j] = it;
+  APP.simEdit = j;
+  return true;
+}
+
+/** 作付けの内容を書き換える */
+function updateItem(idx, patch) {
+  const it = APP.sim.items[idx];
+  if (!it) return;
+  Object.assign(it, patch);
+  const v = byId(it.vegId);
+  if (v && !v.plans.some(p => p.id === it.planId)) it.planId = v.plans[0].id;
+  it.qty = Math.max(1, Math.min(999, parseInt(it.qty, 10) || 1));
+}
+
+/** 編集フォームの HTML */
+function slotEditorHtml(it, idx) {
+  const v = byId(it.vegId);
+  const p = v.plans.find(x => x.id === it.planId) || v.plans[0];
+  const lay = bedLayout(APP.sim);
+  const rows = rowsInBed(v, lay.bedW);
+  const len = bedLengthFor(v, it.qty, lay.bedW);
+  const max = qtyForLength(v, lay.len, lay.bedW);
+  const over = len > lay.len;
+  let h = `<div class="slot-edit" data-editor="${idx}">`;
+  h += `<div class="field"><label class="f">作型</label>
+    <select data-ed="planId">${v.plans.map(x =>
+      `<option value="${x.id}"${x.id === p.id ? ' selected' : ''}>${START_TYPE[x.start].icon} ${esc(x.label)}</option>`).join('')}</select></div>`;
+  h += `<div class="field"><label class="f">畝</label>
+    <select data-ed="place">${Array.from({ length: lay.count }, (_, i) =>
+      `<option value="bed${i}"${it.place === 'bed' + i ? ' selected' : ''}>畝${i + 1}</option>`).join('')}</select></div>`;
+  h += `<div class="field"><label class="f">株数（畝1本に最大 ${max}株）</label>
+    <div class="qty">
+      <button class="qbtn" data-q="${idx}:-10" aria-label="10減らす">−10</button>
+      <button class="qbtn" data-q="${idx}:-1" aria-label="1減らす">−1</button>
+      <input type="number" data-ed="qty" value="${it.qty}" min="1" max="999" inputmode="numeric">
+      <button class="qbtn" data-q="${idx}:1" aria-label="1増やす">＋1</button>
+      <button class="qbtn" data-q="${idx}:10" aria-label="10増やす">＋10</button>
+    </div>
+    <div class="tiny${over ? ' over' : ''}">${rows}条 × ${Math.ceil(it.qty / rows)}株 ＝ 畝の <b>${len}cm</b>
+      ／ 畝の長さ ${lay.len}cm${over ? '　⚠️ 畝からはみ出します' : ''}</div></div>`;
+  h += `<div class="row btnrow">
+    <button class="btn sm ghost" data-mv="${idx}:-1">↑ 前へ</button>
+    <button class="btn sm ghost" data-mv="${idx}:1">↓ 後ろへ</button>
+    <button class="btn sm danger" data-rm="${idx}">削除</button>
+    <button class="btn sm" data-edclose="1">閉じる</button>
+  </div>`;
+  h += `</div>`;
+  return h;
+}
+
+/* ---------------------------------------------------------
    描画
    --------------------------------------------------------- */
 const BED_COLORS = ['#4a7c3f', '#8b6f47', '#3f6f9e', '#a3563f', '#6b5b95', '#4d8b83', '#9b7d2f', '#7a8b3f'];
@@ -418,6 +482,7 @@ function renderSim() {
 
   /* ---- 畝ボード ---- */
   let h = '<h2 class="sec">③ 畝の割り当て</h2>';
+  h += '<div class="tiny" style="margin:-6px 0 10px">各行をタップすると、作型・畝・株数の変更と並び替えができます。並び順は畝の先頭からの配置順です。</div>';
   h += '<div class="beds">';
   for (let b = 0; b < lay.count; b++) {
     const name = '畝' + (b + 1);
@@ -434,19 +499,61 @@ function renderSim() {
       const [a, e] = planOccupy(p);
       const rows = rowsInBed(v, lay.bedW);
       const len = bedLengthFor(v, it.qty, lay.bedW);
+      const idx = s.items.indexOf(it);
+      const editing = APP.simEdit === idx;
       const bad = warns.some(w => w.level === 'error' && w.place === name && w.msg.includes(v.name));
-      h += `<div class="slot${bad ? ' conflict' : ''}">
+      h += `<div class="slot${bad ? ' conflict' : ''}${editing ? ' editing' : ''}"
+              data-edopen="${idx}" role="button" tabindex="0">
         <span>${v.emoji} <b>${esc(v.name)}</b> ${it.qty}株<br>
         <span class="tiny">${rows}条 × ${Math.ceil(it.qty / rows)}株（株間${v.spacing.plant}cm）＝ 畝の${len}cm<br>
         ${esc(p.label)}／${dekLabel(a)}〜${dekLabel(e)}</span></span>
-        <button class="sx" data-rm="${s.items.indexOf(it)}" aria-label="削除">×</button></div>`;
+        <span class="slot-edit-mark">${editing ? '×' : '編集'}</span></div>`;
+      if (editing) h += slotEditorHtml(it, idx);
     });
     h += '</div>';
   }
   h += '</div>';
-  document.getElementById('simBoard').innerHTML = h;
-  document.getElementById('simBoard').querySelectorAll('[data-rm]').forEach(b => {
-    b.onclick = () => { APP.sim.items.splice(+b.dataset.rm, 1); simSaveAndRender(); };
+  const board = document.getElementById('simBoard');
+  board.innerHTML = h;
+
+  board.querySelectorAll('[data-edopen]').forEach(el2 => {
+    el2.onclick = () => {
+      const i = +el2.dataset.edopen;
+      APP.simEdit = (APP.simEdit === i) ? null : i;
+      renderSim();
+    };
+  });
+  board.querySelectorAll('[data-rm]').forEach(b => {
+    b.onclick = ev => {
+      ev.stopPropagation();
+      APP.sim.items.splice(+b.dataset.rm, 1);
+      APP.simEdit = null;
+      simSaveAndRender();
+    };
+  });
+  board.querySelectorAll('[data-mv]').forEach(b => {
+    b.onclick = ev => {
+      ev.stopPropagation();
+      const [i, d] = b.dataset.mv.split(':').map(Number);
+      if (moveItem(i, d)) simSaveAndRender();
+    };
+  });
+  board.querySelectorAll('[data-q]').forEach(b => {
+    b.onclick = ev => {
+      ev.stopPropagation();
+      const [i, d] = b.dataset.q.split(':').map(Number);
+      updateItem(i, { qty: (APP.sim.items[i] || {}).qty + d });
+      simSaveAndRender();
+    };
+  });
+  board.querySelectorAll('[data-editor]').forEach(box2 => {
+    const i = +box2.dataset.editor;
+    box2.onclick = ev => ev.stopPropagation();
+    box2.querySelectorAll('[data-ed]').forEach(f => {
+      f.onchange = () => { updateItem(i, { [f.dataset.ed]: f.value }); simSaveAndRender(); };
+    });
+    const close = box2.querySelector('[data-edclose]');
+    if (close) close.onclick = ev => { ev.stopPropagation(); APP.simEdit = null; renderSim(); };
   });
 
   /* ---- 結果 ---- */
