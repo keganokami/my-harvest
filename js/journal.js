@@ -444,7 +444,7 @@ function renderLogTab() {
           <div class="tiny">${d.actIdx >= 0 ? '記録上の状態：<b>' + esc(d.stages[d.actIdx].label) + '</b>' : '状態は未記録'}
             ／ 標準的な進み：${esc(d.stages[d.expIdx].label)}</div>
         </div>
-        <div style="display:flex;flex-direction:column;gap:5px">
+        <div class="crop-actions vertical">
           <button class="btn sm" data-act="toggleform" data-crop="${c.id}">記録を追加</button>
           <button class="btn sm ghost" data-act="end" data-crop="${c.id}">${c.ended ? '再開' : '終了にする'}</button>
           <button class="btn sm danger" data-act="del" data-crop="${c.id}">削除</button>

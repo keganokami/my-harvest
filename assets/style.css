@@ -157,7 +157,7 @@ h3.sub { font-size: 14px; margin: 16px 0 6px; }
 .btn.sm { padding: 7px 12px; font-size: 12.5px; min-height: 36px; }
 .btn.danger { background: transparent; color: var(--red); border: 1.5px solid var(--red); }
 .btn:disabled { opacity: .4; }
-.btnrow { margin-top: 10px; gap: 8px; }
+.btnrow { margin-top: 12px; }
 .btnrow .btn { flex: 1 1 auto; }
 
 select, input[type=text], input[type=number], input[type=date] {
@@ -178,8 +178,9 @@ select {
 input[type=date] { min-height: 44px; }
 label.f { display: block; font-size: 12px; color: var(--fg-mute); margin-bottom: 3px; font-weight: 600; }
 .field { margin-bottom: 10px; }
-.row { display: flex; flex-direction: column; gap: 0; }
-.row.btnrow { flex-direction: row; flex-wrap: wrap; }
+.row { display: flex; flex-direction: column; gap: 10px; }
+.row > .field { margin-bottom: 0; }
+.row.btnrow { flex-direction: row; flex-wrap: wrap; gap: 10px; }
 
 .note {
   border-left: 3px solid var(--accent); background: var(--accent-light);
@@ -213,7 +214,7 @@ details.fold > summary::after {
 }
 details.fold[open] > summary::after { content: '−'; }
 details.fold[open] > summary { border-bottom: 1px solid var(--line); }
-details.fold > *:not(summary) { padding: 2px 14px 14px; }
+details.fold > *:not(summary) { padding: 12px 14px 16px; }
 details.fold > .table-wrap { margin: 14px; padding: 0; }
 
 /* ---------- 今週やること ---------- */
@@ -409,7 +410,8 @@ table.data td.num, table.data th.num { text-align: right; font-variant-numeric: 
 .crop-row .cicon { font-size: 24px; line-height: 1.2; flex: 0 0 auto; }
 .crop-row .cbody { flex: 1; min-width: 0; }
 .crop-row .ctitle { font-weight: 700; font-size: 14.5px; }
-.crop-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 9px; }
+.crop-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.crop-actions.vertical { flex-direction: column; flex: 0 0 auto; margin-top: 0; }
 
 .progress { height: 6px; background: var(--bg-sub); border-radius: 3px; overflow: hidden; margin: 7px 0 5px; }
 .progress i { display: block; height: 100%; background: var(--green); }
@@ -529,7 +531,8 @@ footer.site {
   h2.sec { font-size: 17px; margin: 30px 0 12px; }
 
   .row { flex-direction: row; flex-wrap: wrap; align-items: flex-end; gap: 12px; }
-  .row > .field { margin-bottom: 0; min-width: 150px; }
+  .row.btnrow { gap: 10px; }
+  .row > .field { min-width: 150px; }
   .row > .field:has(input[type=number]) { min-width: 100px; }
   select, input[type=text], input[type=number], input[type=date] { font-size: 13.5px; min-height: 40px; padding: 8px 11px; }
   .btn { font-size: 13px; padding: 9px 17px; min-height: 40px; }
