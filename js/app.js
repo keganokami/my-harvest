@@ -2,6 +2,9 @@
    アプリ本体：状態管理・タブ・診断・基礎知識
    ========================================================= */
 
+/** ビルド識別子（キャッシュの確認用。tools/release.sh が書き換える） */
+const BUILD = '20260906-2309';
+
 const APP = {
   today: new Date(),
   nowDek: 0,
@@ -140,6 +143,9 @@ function boot() {
   const [m, j] = undek(APP.nowDek);
   document.getElementById('todayBadge').textContent =
     `${m}/${APP.today.getDate()}・${m}月${JUN_NAME[j - 1]}`;
+
+  const bv = document.getElementById('buildVer');
+  if (bv) bv.textContent = 'build ' + BUILD;
 
   document.getElementById('tabbar').addEventListener('click', e => {
     const b = e.target.closest('button');
