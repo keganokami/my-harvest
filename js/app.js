@@ -3,7 +3,7 @@
    ========================================================= */
 
 /** ビルド識別子（キャッシュの確認用。tools/release.sh が書き換える） */
-const BUILD = '20260907-2243';
+const BUILD = '20260907-2319';
 
 const APP = {
   today: new Date(),
@@ -135,6 +135,7 @@ function boot() {
     if (APP.sim.plotW !== undefined || APP.sim.beds !== undefined) APP.sim.items = [];
   }
   if (!APP.sim.dir) APP.sim.dir = 'ns';
+  if (!APP.sim.people) APP.sim.people = 2;
   if (!Array.isArray(APP.sim.items)) APP.sim.items = [];
   delete APP.sim.areaM2; delete APP.sim.beds; delete APP.sim.planters;
   delete APP.sim.sun; delete APP.sim.plotW; delete APP.sim.plotD;

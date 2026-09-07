@@ -7,18 +7,23 @@
 
 const BED_MARGIN = 20;     // 畝の両肩に空ける余裕（左右10cmずつ）
 
-/** 一般的な家庭で消費しきれる現実的な株数の上限（自動プラン用） */
-const MAX_QTY = {
-  mint: 1, shiso: 2, basil: 3, parsley: 3, myoga: 6, nira: 6,
-  negi: 30, rucola: 40, strawberry: 10, zucchini: 1, goya: 2,
-  minitomato: 4, eggplant: 2, pepper: 3, cucumber: 2, okra: 4,
-  broccoli: 4, cabbage: 3, hakusai: 3, sweetpotato: 8, potato: 12,
-  onion: 60, garlic: 30, edamame: 20, snappea: 8, soramame: 6,
-  ingen: 12, daikon: 15, carrot: 60, kabu: 30, radish: 60,
-  komatsuna: 40, mizuna: 20, spinach: 40, shungiku: 12,
-  chingensai: 12, leaflettuce: 8
-};
-function capQty(v, n) { return Math.max(1, Math.min(n, MAX_QTY[v.id] || 999)); }
+/** 世帯人数に応じた「使い切れる」目安株数 */
+function stdQtyFor(v) {
+  const people = (APP.sim && APP.sim.people) || 2;
+  return Math.max(1, Math.round(v.stdQty * people / 2));
+}
+/** 目安と比べてどれくらいかを言葉にする */
+function qtyRatio(v, qty) { return qty / stdQtyFor(v); }
+function qtyLabel(v, qty) {
+  const std = stdQtyFor(v);
+  const r = qty / std;
+  const people = (APP.sim && APP.sim.people) || 2;
+  if (r < 0.5) return `<span class="q-low">${people}人分の目安 ${std}株 に対して少なめ</span>`;
+  if (r > 2.2) return `<span class="q-high">${people}人分の目安 ${std}株 の${r.toFixed(1)}倍。食べきれない可能性</span>`;
+  if (r > 1.4) return `<span class="q-high">${people}人分の目安 ${std}株 よりやや多め</span>`;
+  return `<span class="q-ok">${people}人分の目安 ${std}株 に対して適量</span>`;
+}
+function capQty(v, n) { return Math.max(1, Math.min(n, stdQtyFor(v))); }
 
 /* ---------------------------------------------------------
    畝の計算
@@ -100,8 +105,26 @@ function stripSpan(poly, x1, x2) {
 }
 
 const MIN_BED_LEN = 50;   // これより短い畝は作らない
+const MIN_BED_W = 30;     // 端に残った幅がこれ以上なら細い畝として使う
 
-/** 敷地の形と畝幅・通路幅から、畝の本数・位置・長さを割り出す */
+/** 幅[x1,x2]の帯と敷地の重なりの面積(cm²)。
+ *  高さは x の区分線形関数なので、頂点で区切って台形公式を使えば厳密に求まる。 */
+function stripArea(poly, x1, x2) {
+  const xs = [x1, x2];
+  poly.forEach(p => { if (p.x > x1 + 1e-9 && p.x < x2 - 1e-9) xs.push(p.x); });
+  xs.sort((a, b) => a - b);
+  let area = 0;
+  for (let i = 0; i < xs.length - 1; i++) {
+    const a = spanAtX(poly, xs[i]), b = spanAtX(poly, xs[i + 1]);
+    const ha = a ? a.bottom - a.top : 0;
+    const hb = b ? b.bottom - b.top : 0;
+    area += (ha + hb) / 2 * (xs[i + 1] - xs[i]);
+  }
+  return area;
+}
+
+/** 敷地の形と畝幅・通路幅から、畝の位置と範囲を割り出す。
+ *  畝は長方形に切り抜かず、条ごとに敷地の形に沿わせる（斜めの辺の分を捨てない）。 */
 function bedLayout(s) {
   const e = s.edges;
   const poly0 = plotPolygon(e);
@@ -109,29 +132,80 @@ function bedLayout(s) {
   const poly = s.dir === 'ew' ? swapPoly(poly0) : poly0;   // 東西畝なら軸を入れ替えて計算
   const maxX = Math.max.apply(null, poly.map(p => p.x));
 
+  function makeBed(x, w0) {
+    const w = Math.round(w0);
+    // 帯の中で、敷地が縦にどこからどこまであるか（両端と中間を見る）
+    let top = Infinity, bottom = -Infinity, any = false;
+    const N = 12;
+    for (let i = 0; i <= N; i++) {
+      const sp = spanAtX(poly, x + w * i / N);
+      if (!sp) continue;
+      any = true;
+      top = Math.min(top, sp.top);
+      bottom = Math.max(bottom, sp.bottom);
+    }
+    if (!any) return null;
+    const len = bottom - top;
+    if (len < MIN_BED_LEN) return null;
+    return { x: x, w: w, top: top, len: Math.round(len), area: stripArea(poly, x, x + w) };
+  }
+
   const beds = [];
   let x = 0, guard = 0;
-  while (x + s.bedW <= maxX + 1e-6 && guard++ < 20) {
-    const sp = stripSpan(poly, x, x + s.bedW);
-    if (sp && sp.len >= MIN_BED_LEN) {
-      beds.push({ x: x, w: s.bedW, top: sp.top, len: Math.round(sp.len) });
-    }
-    x += s.bedW + s.pathW;
+  while (x < maxX - 1e-6 && guard++ < 30) {
+    const w = Math.round(Math.min(s.bedW, maxX - x));
+    if (w < MIN_BED_W) break;
+    const bd = makeBed(x, w);
+    if (bd) beds.push(bd);
+    x += w + s.pathW;
+    if (s.pathW === 0 && w < s.bedW) break;   // 端まで使い切った
   }
+
   const plotM2 = polyArea(poly0) / 10000;
-  const areaM2 = beds.reduce((a, b) => a + b.w * b.len, 0) / 10000;
+  const areaM2 = beds.reduce((a, b) => a + b.area, 0) / 10000;
   return {
     count: beds.length, beds: beds, poly: poly0, layoutPoly: poly, ok: true,
     bedW: s.bedW, plotM2: plotM2, areaM2: areaM2, tatami: plotM2 / 1.62,
-    totalLen: beds.reduce((a, b) => a + b.len, 0)
+    totalLen: beds.reduce((a, b) => a + b.len, 0),
+    deadM2: Math.max(0, plotM2 - areaM2)
   };
 }
 
-/** 指定した畝（place 文字列）の長さ */
-function bedLenOf(place) {
+/** 指定した畝 */
+function bedAt(place) {
   const lay = bedLayout(APP.sim);
-  const i = parseInt(String(place).slice(3), 10);
-  return (lay.beds[i] || {}).len || 0;
+  return lay.beds[parseInt(String(place).slice(3), 10)] || null;
+}
+function bedLenOf(place) { const b = bedAt(place); return b ? b.len : 0; }
+
+/** 畝の中の各条について、敷地に収まる範囲（畝の先頭からの相対 cm）を返す */
+function rowRanges(v, bed) {
+  const poly = bedLayout(APP.sim).layoutPoly;
+  if (!poly) return [];
+  return rowPositions(v, bed.w).map(rx => {
+    const sp = spanAtX(poly, bed.x + rx);
+    if (!sp) return { from: 0, to: 0 };
+    return { from: Math.max(0, sp.top - bed.top), to: Math.max(0, sp.bottom - bed.top) };
+  });
+}
+
+/** 畝の [start, start+len] の区間に、その野菜が何株入るか（条ごとに敷地の形を見る） */
+function plantsIn(v, bed, start, len) {
+  const gap = v.spacing.plant;
+  return rowRanges(v, bed).reduce((sum, r) => {
+    const from = Math.max(start, r.from), to = Math.min(start + len, r.to);
+    return sum + Math.max(0, Math.floor((to - from) / gap));
+  }, 0);
+}
+
+/** qty株を植えるのに必要な畝の長さ(cm)。条ごとの長さの違いを織り込む */
+function lengthForQty(v, bed, start, qty) {
+  const gap = v.spacing.plant;
+  const limit = bed.len - start;
+  for (let len = gap; len <= limit + gap; len += gap) {
+    if (plantsIn(v, bed, start, Math.min(len, limit)) >= qty) return Math.min(len, limit);
+  }
+  return Math.max(0, limit);
 }
 
 /** その野菜を畝幅に何条植えられるか */
@@ -201,8 +275,10 @@ function planOccupy(p) {
 /** ある旬に、その畝がどう使われているか（追加順に畝の先頭から詰める） */
 function bedPacking(bedIndex, dekad) {
   const s = APP.sim;
+  const bed = bedLayout(s).beds[bedIndex];
   const segs = [];
   let pos = 0;
+  if (!bed) return { segs: segs, used: 0 };
   s.items.filter(it => it.place === 'bed' + bedIndex).forEach(it => {
     const v = byId(it.vegId);
     if (!v) return;
@@ -210,11 +286,13 @@ function bedPacking(bedIndex, dekad) {
     if (!p) return;
     const [a, e] = planOccupy(p);
     if (!inRange(dekad, a, e)) return;
-    const len = bedLengthFor(v, it.qty, s.bedW);
-    segs.push({ v: v, p: p, it: it, start: pos, len: len, rows: rowsInBed(v, s.bedW) });
+    const len = lengthForQty(v, bed, pos, it.qty);
+    const fits = plantsIn(v, bed, pos, len);
+    segs.push({ v: v, p: p, it: it, start: pos, len: len,
+                rows: rowsInBed(v, bed.w), fits: fits });
     pos += len;
   });
-  return { segs: segs, used: pos };
+  return { segs: segs, used: pos, bed: bed };
 }
 
 /* ---------------------------------------------------------
@@ -227,7 +305,7 @@ function simSaveAndRender() {
 
 function initSimForm() {
   const s = APP.sim;
-  const ids = ['edgeLeft', 'edgeRight', 'edgeTop', 'edgeBottom', 'simBedW', 'simPathW', 'simDir'];
+  const ids = ['edgeLeft', 'edgeRight', 'edgeTop', 'edgeBottom', 'simBedW', 'simPathW', 'simDir', 'simPeople'];
   document.getElementById('edgeLeft').value = String(s.edges.left);
   document.getElementById('edgeRight').value = String(s.edges.right);
   document.getElementById('edgeTop').value = String(s.edges.top);
@@ -235,6 +313,7 @@ function initSimForm() {
   document.getElementById('simBedW').value = String(s.bedW);
   document.getElementById('simPathW').value = String(s.pathW);
   document.getElementById('simDir').value = s.dir;
+  document.getElementById('simPeople').value = String(s.people || 2);
 
   const readEdge = (id, fallback) => {
     const n = parseInt(document.getElementById(id).value, 10);
@@ -255,6 +334,7 @@ function initSimForm() {
       s.bedW = parseInt(document.getElementById('simBedW').value, 10) || 70;
       s.pathW = parseInt(document.getElementById('simPathW').value, 10) || 40;
       s.dir = document.getElementById('simDir').value;
+      s.people = parseInt(document.getElementById('simPeople').value, 10) || 2;
       // 無くなった畝の割り当てを整理
       const lay = bedLayout(s);
       s.items = s.items.filter(it => parseInt(it.place.slice(3), 10) < lay.count);
@@ -307,24 +387,28 @@ function updateSimHint() {
   const lay = bedLayout(s);
   const [a, b] = planOccupy(p);
 
-  const bedLen = bedLenOf(place) || (lay.beds[0] || {}).len || 0;
+  const bed = bedAt(place) || lay.beds[0];
+  const bedLen = bed ? bed.len : 0;
+  const people = s.people || 2;
+  const std = stdQtyFor(v);
   let hint = `占有期間：<b>${dekLabel(a)}〜${dekLabel(b)}</b>（約${Math.round(rangeLen(a, b) * DEK_DAYS)}日）`;
-  const rows = rowsInBed(v, lay.bedW);
-  const cap = qtyForLength(v, bedLen, lay.bedW);
-  hint += `<br>畝幅${lay.bedW}cmに <b>${rows}条</b>（条間${v.spacing.row}cm）／ 株間${v.spacing.plant}cm`
+  const rows = bed ? rowsInBed(v, bed.w) : 0;
+  const cap = bed ? plantsIn(v, bed, 0, bedLen) : 0;
+  hint += `<br>畝幅${bed ? bed.w : lay.bedW}cmに <b>${rows}条</b>（条間${v.spacing.row}cm）／ 株間${v.spacing.plant}cm`
         + `<br>この畝（${bedLen}cm）を使い切ると <b>${cap}株</b>`;
-  document.getElementById('simQty').value = Math.max(1, Math.min(cap, capQty(v, cap)));
+  hint += `<br><b class="std-hint">${people}人分の目安は ${std}株</b>（使い切れる量）`;
+  document.getElementById('simQty').value = Math.max(1, Math.min(cap || std, std));
   const qty = parseInt(document.getElementById('simQty').value, 10) || 1;
-  hint += ` ／ この株数なら畝の <b>${bedLengthFor(v, qty, lay.bedW)}cm</b> を使います`;
+  if (bed) hint += ` ／ この株数なら畝の <b>${lengthForQty(v, bed, 0, qty)}cm</b> を使います`;
 
   // 畝幅を変えると何条・何株になるか
   hint += `<div class="wcmp"><div class="wcmp-t">${esc(v.name)}は畝幅でこう変わります</div><table>
     <tr><th>畝幅</th>${widthComparison(v, bedLen).map(c =>
-      `<th class="${c.bedW === lay.bedW ? 'cur' : ''}">${c.bedW}cm</th>`).join('')}</tr>
+      `<th class="${c.bedW === (bed ? bed.w : lay.bedW) ? 'cur' : ''}">${c.bedW}cm</th>`).join('')}</tr>
     <tr><th>条数</th>${widthComparison(v, bedLen).map(c =>
-      `<td class="${c.bedW === lay.bedW ? 'cur' : ''}">${c.rows}条</td>`).join('')}</tr>
-    <tr><th>この畝(${bedLen}cm)</th>${widthComparison(v, bedLen).map(c =>
-      `<td class="${c.bedW === lay.bedW ? 'cur' : ''}">${c.perBed}株</td>`).join('')}</tr>
+      `<td class="${c.bedW === (bed ? bed.w : lay.bedW) ? 'cur' : ''}">${c.rows}条</td>`).join('')}</tr>
+    <tr><th>畝${bedLen}cm換算</th>${widthComparison(v, bedLen).map(c =>
+      `<td class="${c.bedW === (bed ? bed.w : lay.bedW) ? 'cur' : ''}">${c.perBed}株</td>`).join('')}</tr>
     </table><div class="tiny">条間${v.spacing.row}cm・株間${v.spacing.plant}cm から算出。畝幅は「① 敷地と畝の設定」で変えられます。</div></div>`;
   document.getElementById('simHint').innerHTML = hint;
 }
@@ -423,6 +507,26 @@ function validateSim() {
       warns.push({ level: 'error', place: name,
         msg: `${name}は${dekLabel(peakDek)}に長さが足りません（必要 ${Math.round(peak)}cm / この畝の長さ ${bedLen}cm）。株数を減らすか、別の畝・別の時期にずらしてください。` });
     }
+    // 入りきらない株数になっていないか
+    for (let d = 0; d < 36; d++) {
+      const pk = bedPacking(b, d);
+      const bad = pk.segs.filter(sg => sg.fits < sg.it.qty);
+      if (bad.length) {
+        bad.forEach(sg => warns.push({ level: 'error', place: name,
+          msg: `${name}の${sg.v.name}は${sg.it.qty}株の指定ですが、この畝には${sg.fits}株しか入りません。株数を減らすか、別の畝へ移してください。` }));
+        break;
+      }
+    }
+    // 使い切れない量になっていないか
+    const seen2 = {};
+    items.forEach(it => {
+      const v = byId(it.vegId);
+      if (seen2[v.id]) return; seen2[v.id] = 1;
+      if (qtyRatio(v, it.qty) > 2.2) {
+        warns.push({ level: 'info', place: name,
+          msg: `${v.name}が${it.qty}株あります。${s.people || 2}人分の目安は${stdQtyFor(v)}株なので、食べきれない可能性があります（株数は行をタップして変更できます）。` });
+      }
+    });
 
     // 連作：同じ畝に同じ科
     const famSeen = {};
@@ -455,6 +559,18 @@ function validateSim() {
         warns.push({ level: 'info', place: name,
           msg: `${name}は年間で約${Math.round(empty * DEK_DAYS)}日まるごと空いています。空き期間は堆肥を入れて休ませるか、コマツナ・ラディッシュ・インゲンなど短期作物を挟むと効率が上がります。` });
       }
+    }
+  }
+
+  // 敷地の広さが制約になっているか（多くの作付けが目安を大きく下回る）
+  const uniq = {};
+  s.items.forEach(it => { if (!uniq[it.vegId]) uniq[it.vegId] = it.qty; else uniq[it.vegId] += it.qty; });
+  const ids = Object.keys(uniq);
+  if (ids.length >= 3) {
+    const low = ids.filter(id => qtyRatio(byId(id), uniq[id]) < 0.6).length;
+    if (low / ids.length >= 0.4) {
+      warns.push({ level: 'info', place: '敷地',
+        msg: `${s.people || 2}人分の目安に対して、${low}種が少なめの株数になっています。この敷地の広さが上限なので、種類を減らしてよく食べるものに絞るほうが、結果的に食卓への貢献は大きくなります。` });
     }
   }
 
@@ -562,13 +678,14 @@ function autoPlan() {
 
   // --- 畝 ---
   for (let b = 0; b < lay.count; b++) {
-    const bedLen = lay.beds[b].len;
+    const bed = lay.beds[b];
+    const bedLen = bed.len;
     fill({
       place: 'bed' + b, cap: bedLen, threshold: bedLen * 0.25, maxItems: 6, useRotation: true,
       pick: {
         place: 'plot', skipShade: true,
-        qtyOf: (v, freeLen) => qtyForLength(v, freeLen, lay.bedW),
-        amountOf: (v, qty) => bedLengthFor(v, qty, lay.bedW)
+        qtyOf: (v, freeLen) => plantsIn(v, bed, bedLen - freeLen, freeLen),
+        amountOf: (v, qty) => lengthForQty(v, bed, 0, qty)
       }
     });
   }
@@ -608,11 +725,14 @@ function slotEditorHtml(it, idx) {
   const v = byId(it.vegId);
   const p = v.plans.find(x => x.id === it.planId) || v.plans[0];
   const lay = bedLayout(APP.sim);
-  const bedLen = bedLenOf(it.place);
-  const rows = rowsInBed(v, lay.bedW);
-  const len = bedLengthFor(v, it.qty, lay.bedW);
-  const max = qtyForLength(v, bedLen, lay.bedW);
-  const over = len > bedLen;
+  const bed = bedAt(it.place) || lay.beds[0] || { w: lay.bedW, len: 0 };
+  const bedLen = bed.len;
+  const rows = rowsInBed(v, bed.w);
+  const len = lengthForQty(v, bed, 0, it.qty);
+  const fits = plantsIn(v, bed, 0, len);
+  const max = plantsIn(v, bed, 0, bedLen);
+  const std = stdQtyFor(v);
+  const over = it.qty > max;
   let h = `<div class="slot-edit" data-editor="${idx}">`;
   h += `<div class="field"><label class="f">作型</label>
     <select data-ed="planId">${v.plans.map(x =>
@@ -620,7 +740,7 @@ function slotEditorHtml(it, idx) {
   h += `<div class="field"><label class="f">畝</label>
     <select data-ed="place">${lay.beds.map((b, i) =>
       `<option value="bed${i}"${it.place === 'bed' + i ? ' selected' : ''}>畝${i + 1}（${b.len}cm）</option>`).join('')}</select></div>`;
-  h += `<div class="field"><label class="f">株数（畝1本に最大 ${max}株）</label>
+  h += `<div class="field"><label class="f">株数（この畝に最大 ${max}株 ／ ${(APP.sim.people || 2)}人分の目安 ${std}株）</label>
     <div class="qty">
       <button class="qbtn" data-q="${idx}:-10" aria-label="10減らす">−10</button>
       <button class="qbtn" data-q="${idx}:-1" aria-label="1減らす">−1</button>
@@ -628,8 +748,9 @@ function slotEditorHtml(it, idx) {
       <button class="qbtn" data-q="${idx}:1" aria-label="1増やす">＋1</button>
       <button class="qbtn" data-q="${idx}:10" aria-label="10増やす">＋10</button>
     </div>
-    <div class="tiny${over ? ' over' : ''}">${rows}条 × ${Math.ceil(it.qty / rows)}株 ＝ 畝の <b>${len}cm</b>
-      ／ この畝の長さ ${bedLen}cm${over ? '　⚠️ 畝からはみ出します' : ''}</div></div>`;
+    <div class="tiny${over ? ' over' : ''}">${rows}条 ＝ 畝の <b>${len}cm</b>（${fits}株ぶん）
+      ／ この畝の長さ ${bedLen}cm${over ? '　⚠️ この畝には入りきりません' : ''}
+      <br>${qtyLabel(v, it.qty)}</div></div>`;
   h += `<div class="row btnrow">
     <button class="btn sm ghost" data-mv="${idx}:-1">↑ 前へ</button>
     <button class="btn sm ghost" data-mv="${idx}:1">↓ 後ろへ</button>
@@ -662,6 +783,7 @@ function renderSim() {
       info.innerHTML = `<div class="note green" style="margin:0"><strong>この敷地には 畝 ${lay.count}本</strong>
         ${lay.beds.map((b, i) => `畝${i + 1}: 幅${b.w}cm × 長さ${b.len}cm`).join(' ／ ')}（通路${s.pathW}cm・${s.dir === 'ns' ? '南北' : '東西'}方向）<br>
         栽培面積 ${lay.areaM2.toFixed(2)}m² ／ 敷地 ${lay.plotM2.toFixed(2)}m²（約${lay.tatami.toFixed(1)}畳）
+        ／ 使えていない部分 ${lay.deadM2.toFixed(2)}m²
         <span class="tiny">畝の合計の長さ ${lay.totalLen}cm がこのシミュレーションの「容量」です。${
           s.pathW === 0 ? '通路なしの設定です。敷地の外周から手を伸ばして作業し、畝の上には乗らないでください（土が締まって根が入らなくなります）。' : ''
         }</span></div>`;
@@ -686,15 +808,16 @@ function renderSim() {
       const v = byId(it.vegId);
       const p = v.plans.find(x => x.id === it.planId);
       const [a, e] = planOccupy(p);
-      const rows = rowsInBed(v, lay.bedW);
-      const len = bedLengthFor(v, it.qty, lay.bedW);
+      const bedObj = lay.beds[b];
+      const rows = rowsInBed(v, bedObj.w);
+      const len = lengthForQty(v, bedObj, 0, it.qty);
       const idx = s.items.indexOf(it);
       const editing = APP.simEdit === idx;
       const bad = warns.some(w => w.level === 'error' && w.place === name && w.msg.includes(v.name));
       h += `<div class="slot${bad ? ' conflict' : ''}${editing ? ' editing' : ''}"
               data-edopen="${idx}" role="button" tabindex="0">
         <span>${v.emoji} <b>${esc(v.name)}</b> ${it.qty}株<br>
-        <span class="tiny">${rows}条 × ${Math.ceil(it.qty / rows)}株（株間${v.spacing.plant}cm）＝ 畝の${len}cm<br>
+        <span class="tiny">${rows}条（株間${v.spacing.plant}cm）＝ 畝の${len}cm ／ ${qtyLabel(v, it.qty)}<br>
         ${esc(p.label)}／${dekLabel(a)}〜${dekLabel(e)}</span></span>
         <span class="slot-edit-mark">${editing ? '×' : '編集'}</span></div>`;
       if (editing) h += slotEditorHtml(it, idx);
@@ -930,16 +1053,17 @@ function renderPlotSVG(dekad) {
   let dotBudget = MAX_DOTS;
   lay.beds.forEach((bd, b) => {
     const R = bedRect(bd);
-    g += `<rect x="${X(R.x).toFixed(1)}" y="${Y(R.y).toFixed(1)}"
+    g += `<clipPath id="plotClip"><polygon points="${pts}"/></clipPath>`;
+    g += `<g clip-path="url(#plotClip)"><rect x="${X(R.x).toFixed(1)}" y="${Y(R.y).toFixed(1)}"
            width="${cm(R.w).toFixed(1)}" height="${cm(R.h).toFixed(1)}"
-           fill="var(--bg-card)" stroke="var(--green)" stroke-width="1.2" rx="2"/>`;
+           fill="var(--bg-card)" stroke="var(--green)" stroke-width="1.2"/></g>`;
     g += `<text x="${X(R.x + R.w / 2).toFixed(1)}" y="${(Y(R.y) - 4).toFixed(1)}" text-anchor="middle"
            font-size="9" font-weight="700" fill="var(--green)">畝${b + 1}</text>`;
 
     const pk = bedPacking(b, dekad);
     pk.segs.forEach((sg, i) => {
       const color = BED_COLORS[i % BED_COLORS.length];
-      const over = sg.start + sg.len > bd.len;
+      const over = sg.fits < sg.it.qty;          // 指定した株数がこの畝に入りきらない
       const drawLen = Math.min(sg.len, Math.max(0, bd.len - sg.start));
       if (drawLen <= 0) return;
 
@@ -954,23 +1078,29 @@ function renderPlotSVG(dekad) {
              stroke="${over ? 'var(--red)' : color}" stroke-width="${over ? 1.5 : 0.8}"
              ${over ? 'stroke-dasharray="4 2"' : ''}/>`;
 
-      /* 株の点 */
+      /* 株の点（条ごとに敷地に収まる範囲だけ） */
       const rowsPos = rowPositions(sg.v, bd.w);
-      const perRow = Math.ceil(sg.it.qty / rowsPos.length);
-      const total = rowsPos.length * perRow;
-      const r = Math.max(1.1, Math.min(cm(sg.v.spacing.plant) / 2.6, cm(sg.v.spacing.row) / 2.6, 5));
+      const ranges = rowRanges(sg.v, bd);
+      const gap = sg.v.spacing.plant;
+      const total = sg.it.qty;
+      const r = Math.max(1.1, Math.min(cm(gap) / 2.6, cm(sg.v.spacing.row) / 2.6, 5));
       if (total <= dotBudget) {
         dotBudget -= total;
         let n = 0;
-        for (let j = 0; j < perRow; j++) {
-          const along = sg.start + j * sg.v.spacing.plant + sg.v.spacing.plant / 2;
-          if (along > bd.len) break;
-          for (let ri = 0; ri < rowsPos.length; ri++) {
-            if (n++ >= sg.it.qty) break;
+        const segEnd = sg.start + sg.len;
+        for (let j = 0; n < sg.it.qty && j < 400; j++) {
+          let placed = false;
+          for (let ri = 0; ri < rowsPos.length && n < sg.it.qty; ri++) {
+            const rr = ranges[ri];
+            const from = Math.max(sg.start, rr.from);
+            const along = from + j * gap + gap / 2;
+            if (along > Math.min(segEnd, rr.to)) continue;
+            placed = true; n++;
             const px = R.along === 'y' ? R.x + rowsPos[ri] : R.x + along;
             const py = R.along === 'y' ? R.y + along : R.y + rowsPos[ri];
             g += `<circle cx="${X(px).toFixed(1)}" cy="${Y(py).toFixed(1)}" r="${r.toFixed(1)}" fill="${color}"/>`;
           }
+          if (!placed) break;
         }
       } else {
         rowsPos.forEach(rp => {
@@ -1003,7 +1133,8 @@ function renderPlotSVG(dekad) {
     legend.forEach(L => {
       html += `<span${L.over ? ' class="over"' : ''}><i style="background:${L.color}"></i>
         畝${L.bed} ${esc(L.v.name)} ${L.seg.it.qty}株
-        <b>${L.seg.rows}条</b>／${Math.round(L.seg.start)}〜${Math.round(L.seg.start + L.seg.len)}cm${L.over ? '（はみ出し）' : ''}</span>`;
+        <b>${L.seg.rows}条</b>／${Math.round(L.seg.start)}〜${Math.round(L.seg.start + L.seg.len)}cm${
+          L.over ? `（${L.seg.fits}株しか入りません）` : ''}</span>`;
     });
     html += '</div>';
   } else {

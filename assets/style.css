@@ -396,6 +396,12 @@ table.data td.num, table.data th.num { text-align: right; font-variant-numeric: 
 }
 .qbtn:active { background: var(--line); }
 
+/* ---------- 株数の妥当性 ---------- */
+.q-ok { color: var(--green-dark); font-weight: 600; }
+.q-low { color: var(--blue); font-weight: 600; }
+.q-high { color: var(--accent); font-weight: 600; }
+.std-hint { color: var(--green-dark); }
+
 /* ---------- 畝の取り方の候補 ---------- */
 .sugg { margin-top: 12px; border-top: 1px dashed var(--line); padding-top: 10px; }
 .sugg-t { font-size: 12px; font-weight: 700; margin-bottom: 7px; }
