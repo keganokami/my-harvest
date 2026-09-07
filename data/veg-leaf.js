@@ -15,6 +15,7 @@ VEG_DB.push(
   spacing: { plant: 5, row: 15 },
   perM2: 100,
   stdQty: 20,   // 2人家族の目安株数
+  sowing: { type: 'line', perCm: 1, thin: '本葉1〜2枚で3cm、本葉3〜4枚で最終5〜6cm間隔に', edible: true },
   summary: '種をまいて30〜40日で穫れる、家庭菜園の入門No.1。暑さ寒さに強く、ほぼ失敗しません。',
   whyGood: '発芽率が非常に高く、間引き菜も食べられるので「失敗」という状態になりにくい。畝1mもあれば1〜2回の食卓分が穫れます。',
   plans: [
@@ -68,6 +69,7 @@ VEG_DB.push(
   spacing: { plant: 5, row: 15 },
   perM2: 80,
   stdQty: 25,   // 2人家族の目安株数
+  sowing: { type: 'line', perCm: 1, thin: '本葉1〜2枚で3cm、本葉3〜4枚で最終5〜6cm間隔に', edible: true },
   summary: '冬に穫る「寒締めホウレンソウ」は市販品と別物の甘さ。ただし土が酸性だと絶対に育ちません。',
   whyGood: '冬の畑の主役。霜に当たるほど糖度が上がり、スーパーでは買えない味になります。冬は虫もほぼいません。',
   plans: [
@@ -121,6 +123,7 @@ VEG_DB.push(
   spacing: { plant: 10, row: 20 },
   perM2: 50,
   stdQty: 10,   // 2人家族の目安株数
+  sowing: { type: 'line', perCm: 1, thin: '本葉2〜3枚から順次、小株なら5cm・大株なら25〜30cm間隔に', edible: true },
   summary: '関西の冬野菜の代表。サラダにも鍋にも使え、寒さに非常に強く年内から2月まで穫り続けられます。',
   whyGood: 'コマツナと並ぶ超簡単作物。小株なら30日、大株なら60日と収穫幅が広く、放っておいても穫れます。',
   plans: [
@@ -170,6 +173,7 @@ VEG_DB.push(
   spacing: { plant: 15, row: 20 },
   perM2: 30,
   stdQty: 8,   // 2人家族の目安株数
+  sowing: { type: 'line', perCm: 1, thin: '本葉2〜3枚で最終15cm間隔に。以降は摘み取り収穫', edible: true },
   summary: '独特の香りで虫がほとんど付かない優等生。摘み取り収穫で冬中ずっと穫れます。鍋の必需品。',
   whyGood: 'キク科の香りのおかげで無農薬でもきれいに育つ。1回まけば脇芽を摘み続けて12月〜3月まで収穫が続き、コスパが非常に高い。',
   plans: [
@@ -222,6 +226,7 @@ VEG_DB.push(
   spacing: { plant: 20, row: 25 },
   perM2: 16,
   stdQty: 4,   // 2人家族の目安株数
+  sowing: { type: 'line', perCm: 0.7, thin: '本葉2〜3枚で最終20cm間隔に', edible: true },
   summary: '外葉をかき取って使う「もぎ取りレタス」。1株で1〜2ヶ月間サラダが穫れ続けます。虫も付きにくい。',
   whyGood: 'キク科なので青虫がほとんど来ない。玉レタスと違い結球を待たなくてよく、必要な分だけ収穫できるので失敗しようがありません。畝の縁の空きスペースにも植えられます。',
   plans: [
@@ -286,6 +291,7 @@ VEG_DB.push(
   spacing: { plant: 15, row: 20 },
   perM2: 35,
   stdQty: 8,   // 2人家族の目安株数
+  sowing: { type: 'line', perCm: 1, thin: '本葉2〜3枚で最終15cm間隔に', edible: true },
   summary: '40日で株元がぷっくり膨らむ中国野菜。生育が早く、炒め物にすぐ使えます。',
   whyGood: 'コマツナ並みに簡単で、しかも「野菜らしい形」に育つので達成感があります。秋まきなら虫害も少ない。',
   plans: [
@@ -334,6 +340,7 @@ VEG_DB.push(
   spacing: { plant: 8, row: 15 },
   perM2: 80,
   stdQty: 12,   // 2人家族の目安株数
+  sowing: { type: 'line', perCm: 1, thin: '本葉2枚で最終8cm間隔に', edible: true },
   summary: '20〜30日で穫れる最速級。ゴマの香りとピリッとした辛味は買うと高いのに、育てるのは超簡単。',
   whyGood: 'スーパーでは50gで200円前後する高級ハーブ野菜。生育が早く、かき取れば何度も穫れるので費用対効果が最強クラスです。',
   plans: [
@@ -383,6 +390,7 @@ VEG_DB.push(
   spacing: { plant: 45, row: 45 },
   perM2: 4,
   stdQty: 4,   // 2人家族の目安株数
+  sowing: { type: 'nursery', thin: 'ポットに3〜4粒まき、本葉が出たら1本に間引く。畝に定植したあとは間引かない', edible: false },
   summary: '中央の大きな花蕾を穫った後、脇から小さな側花蕾が春まで次々出る「長距離ランナー」。コスパ抜群。',
   whyGood: '1株で頂花蕾1個＋側花蕾10〜20個。スーパーなら1個200〜300円するものが1株から1000円分以上穫れます。秋植えは虫が減る時期なので初心者でも成功しやすい。',
   plans: [
@@ -450,6 +458,7 @@ VEG_DB.push(
   spacing: { plant: 40, row: 45 },
   perM2: 5,
   stdQty: 3,   // 2人家族の目安株数
+  sowing: { type: 'plant' },
   summary: '結球するまで4ヶ月。場所と時間を占有しますが、無農薬キャベツの甘さは格別。',
   whyGood: '冬キャベツは甘みが強く、外葉まで使えます。ただし「面積あたりの得」で見るとブロッコリーに劣るので、狭い畑では優先度は中程度。',
   plans: [
@@ -503,6 +512,7 @@ VEG_DB.push(
   spacing: { plant: 45, row: 50 },
   perM2: 4,
   stdQty: 3,   // 2人家族の目安株数
+  sowing: { type: 'point', perSpot: 4, thin: '本葉2枚で3株、本葉4〜5枚で2株、本葉6〜7枚で最終1株に。ポット育苗なら1ポット3〜4粒まいて1本に', edible: true },
   summary: '「まき時が1〜2週間ずれると結球しない」時間にシビアな作物。上級者への登竜門。',
   whyGood: '鍋の主役で消費量も多い。ただし冷え込みの早い内陸では、まき遅れると結球前に寒さで生育が止まります。2年目以降のチャレンジ推奨。',
   plans: [

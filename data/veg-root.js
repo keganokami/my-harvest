@@ -14,6 +14,7 @@ VEG_DB.push(
   spacing: { plant: 25, row: 30 },
   perM2: 12,
   stdQty: 8,   // 2人家族の目安株数
+  sowing: { type: 'point', perSpot: 5, thin: '双葉で3株、本葉2〜3枚で2株、本葉6〜7枚で最終1株に', edible: true },
   summary: '土さえ深く耕せば失敗しにくい秋の主力。1本200円が1袋の種から20本穫れます。',
   whyGood: '発芽率が高く、間引き菜も葉も食べられて捨てるところがない。収穫後も畑に置いたまま1月まで貯蔵できます。面積あたりの金額効率が高い。',
   plans: [
@@ -68,6 +69,7 @@ VEG_DB.push(
   spacing: { plant: 10, row: 15 },
   perM2: 60,
   stdQty: 15,   // 2人家族の目安株数
+  sowing: { type: 'line', perCm: 1, thin: '本葉1〜2枚で5cm、本葉4〜5枚で最終10〜12cm間隔に', edible: true },
   summary: 'ダイコンより浅い土で作れて、45日で穫れる。採れたてのカブは生でも甘い。',
   whyGood: 'ダイコンより浅い耕土でよく、生育も早い優秀な根菜。葉も美味しく、間引き菜から本収穫まで無駄がありません。',
   plans: [
@@ -117,6 +119,7 @@ VEG_DB.push(
   spacing: { plant: 10, row: 20 },
   perM2: 50,
   stdQty: 30,   // 2人家族の目安株数
+  sowing: { type: 'line', perCm: 2, thin: '本葉2枚で3cm、本葉5〜6枚で最終10cm間隔に。密にまくほど発芽が揃う', edible: true },
   summary: '「発芽させられたら勝ち」。そこさえ越えれば放置でよく、採れたては甘さが別次元。',
   whyGood: '収穫まで4ヶ月かかりますが、その間ほぼ手がかからない。畑の隅で静かに育つ省力作物です。',
   plans: [
@@ -171,6 +174,7 @@ VEG_DB.push(
   spacing: { plant: 5, row: 10 },
   perM2: 150,
   stdQty: 30,   // 2人家族の目安株数
+  sowing: { type: 'line', perCm: 0.7, thin: '双葉で3cm、本葉2枚で最終5cm間隔に', edible: true },
   summary: '20〜30日で真っ赤な実が穫れる、最速・最も失敗しない野菜。最初の1つに最適。',
   whyGood: '金額的な貢献は小さいものの、「種をまいたら育つ」という体験を最短で得られます。空きスペースの穴埋めにも最適。',
   plans: [
@@ -219,6 +223,7 @@ VEG_DB.push(
   spacing: { plant: 30, row: 60 },
   perM2: 6,
   stdQty: 8,   // 2人家族の目安株数
+  sowing: { type: 'plant' },
   summary: '植えて土を寄せるだけ。種イモ1kg（約800円）が3〜4kgのイモになる、投資効率の高い作物。',
   whyGood: '病害虫の心配が少なく、雑草にも強い。掘り出す瞬間の楽しさは家庭菜園の醍醐味。保存も効くので食費への貢献が実感しやすい。',
   plans: [
@@ -275,6 +280,7 @@ VEG_DB.push(
   spacing: { plant: 35, row: 70 },
   perM2: 4,
   stdQty: 5,   // 2人家族の目安株数
+  sowing: { type: 'plant' },
   summary: '肥料も水もいらない。やせた土地ほどよく育つ、放置栽培の王様。',
   whyGood: '真夏の水やりすら基本不要で、病害虫もほぼ無し。夏の間ほったらかしで秋に大収穫という、忙しい人向けの最強作物です。',
   plans: [

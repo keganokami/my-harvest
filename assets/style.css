@@ -396,6 +396,14 @@ table.data td.num, table.data th.num { text-align: right; font-variant-numeric: 
 }
 .qbtn:active { background: var(--line); }
 
+/* ---------- 種まきと間引き ---------- */
+.sowbox {
+  margin-top: 8px; padding: 8px 10px; border-radius: 8px;
+  background: var(--blue-light); color: var(--fg-mute);
+  font-size: 11.5px; line-height: 1.7;
+}
+.sowbox b { color: var(--fg); }
+
 /* ---------- 株数の妥当性 ---------- */
 .q-ok { color: var(--green-dark); font-weight: 600; }
 .q-low { color: var(--blue); font-weight: 600; }

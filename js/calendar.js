@@ -230,6 +230,33 @@ function openVeg(id) {
     <div class="card tight"><h3>🧪 肥料</h3><div class="muted">${esc(v.fert)}</div></div>
   </div>`;
 
+  /* 種まきと間引き */
+  const sw = v.sowing || { type: 'plant' };
+  const SOW_LABEL = {
+    line: 'すじまき（条に沿って線状にまく）',
+    point: '点まき（1ヶ所にまとめてまく）',
+    nursery: 'ポット・苗床で育ててから定植',
+    plant: '苗・種イモ・球根から（種まきなし）'
+  };
+  h += `<h3 class="sub">種まきと間引き</h3>`;
+  h += `<div class="note ${sw.type === 'plant' ? '' : 'blue'}">
+    <strong>まき方：${SOW_LABEL[sw.type]}</strong>`;
+  if (sw.type === 'point') {
+    h += `1ヶ所に <b>${sw.perSpot}粒</b>ずつまき、間引いて最終1〜2本にします。`;
+  } else if (sw.type === 'line') {
+    h += `1cmあたり約${sw.perCm}粒の密度でまき、2〜3回に分けて間引きます。`;
+  } else if (sw.type === 'nursery') {
+    h += `畝に直接まかず、ポットや苗床で育ててから植え付けます。`;
+  } else {
+    h += `種はまかないので間引きもありません。買った株数がそのまま最終株数です。`;
+  }
+  if (sw.thin) h += `<br><b>間引き：</b>${esc(sw.thin)}`;
+  if (sw.edible) h += `<br><b>間引き菜は食べられます。</b>捨てずにサラダ・味噌汁・お浸しに使ってください。`;
+  h += `</div>`;
+  h += `<div class="tiny" style="margin:-4px 0 12px">
+    このアプリで表示する株数は、すべて<b>間引きを終えたあとの最終株数</b>です
+    （下の株間・条数も最終株間で計算しています）。</div>`;
+
   /* 栽培条件 */
   h += `<h3 class="sub">畝での植え付け</h3>`;
   h += `<div class="table-wrap"><table class="data">

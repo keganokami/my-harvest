@@ -12,6 +12,42 @@ function stdQtyFor(v) {
   const people = (APP.sim && APP.sim.people) || 2;
   return Math.max(1, Math.round(v.stdQty * people / 2));
 }
+/* ---------------------------------------------------------
+   種まきと間引き
+   このアプリで扱う「株数」は、すべて間引きを終えたあとの最終株数。
+   種からの作型では、実際にまく粒数はこれより多くなる。
+   --------------------------------------------------------- */
+
+/** 種からの作型かどうか */
+function isFromSeed(plan) { return plan && plan.start === 'seed'; }
+
+/** qty株（最終株数）を得るために実際にまく量 */
+function sowingNeed(v, plan, qty, bed) {
+  const sw = v.sowing || { type: 'plant' };
+  if (!isFromSeed(plan) || sw.type === 'plant') return null;
+  if (sw.type === 'point') {
+    return { kind: 'point', spots: qty, seeds: Math.round(qty * sw.perSpot),
+             text: `${qty}ヶ所に${sw.perSpot}粒ずつ（約${Math.round(qty * sw.perSpot)}粒）` };
+  }
+  if (sw.type === 'nursery') {
+    return { kind: 'nursery', spots: qty, seeds: Math.round(qty * 3),
+             text: `ポット${qty}個に3粒ずつ（約${qty * 3}粒）育苗してから定植` };
+  }
+  // すじまき：条の長さに沿ってまく
+  const len = bed ? lengthForQty(v, bed, 0, qty) : Math.ceil(qty / Math.max(1, rowsInBed(v, 70))) * v.spacing.plant;
+  const rows = bed ? rowsInBed(v, bed.w) : rowsInBed(v, 70);
+  const seeds = Math.round(len * rows * sw.perCm);
+  return { kind: 'line', rows: rows, len: len, seeds: seeds,
+           text: `${rows}条 × ${len}cm にすじまき（約${seeds}粒）` };
+}
+
+/** 間引きの説明（種からのときだけ） */
+function thinningNote(v, plan) {
+  const sw = v.sowing || { type: 'plant' };
+  if (!isFromSeed(plan) || sw.type === 'plant') return null;
+  return sw.thin + (sw.edible ? '。間引き菜も食べられます' : '');
+}
+
 /** 目安と比べてどれくらいかを言葉にする */
 function qtyRatio(v, qty) { return qty / stdQtyFor(v); }
 function qtyLabel(v, qty) {
@@ -400,6 +436,16 @@ function updateSimHint() {
   document.getElementById('simQty').value = Math.max(1, Math.min(cap || std, std));
   const qty = parseInt(document.getElementById('simQty').value, 10) || 1;
   if (bed) hint += ` ／ この株数なら畝の <b>${lengthForQty(v, bed, 0, qty)}cm</b> を使います`;
+  const need = sowingNeed(v, p, qty, bed);
+  const thin = thinningNote(v, p);
+  if (need || thin) {
+    hint += `<div class="sowbox"><b>株数は間引き後の最終株数です。</b>`;
+    if (need) hint += `<br>実際にまく量：${need.text}`;
+    if (thin) hint += `<br>間引き：${esc(thin)}`;
+    hint += `</div>`;
+  } else {
+    hint += `<div class="sowbox"><b>株数は植え付ける株の数です</b>（${START_TYPE[p.start].label}なので間引きはありません）。</div>`;
+  }
 
   // 畝幅を変えると何条・何株になるか
   hint += `<div class="wcmp"><div class="wcmp-t">${esc(v.name)}は畝幅でこう変わります</div><table>
@@ -750,7 +796,14 @@ function slotEditorHtml(it, idx) {
     </div>
     <div class="tiny${over ? ' over' : ''}">${rows}条 ＝ 畝の <b>${len}cm</b>（${fits}株ぶん）
       ／ この畝の長さ ${bedLen}cm${over ? '　⚠️ この畝には入りきりません' : ''}
-      <br>${qtyLabel(v, it.qty)}</div></div>`;
+      <br>${qtyLabel(v, it.qty)}</div>`;
+  const need2 = sowingNeed(v, p, it.qty, bed);
+  const thin2 = thinningNote(v, p);
+  h += `<div class="sowbox tiny"><b>株数は間引き後の最終株数です。</b>`
+    + (need2 ? `<br>実際にまく量：${esc(need2.text)}` : '')
+    + (thin2 ? `<br>間引き：${esc(thin2)}` : '')
+    + (!need2 && !thin2 ? `（${START_TYPE[p.start].label}なので間引きはありません）` : '')
+    + `</div></div>`;
   h += `<div class="row btnrow">
     <button class="btn sm ghost" data-mv="${idx}:-1">↑ 前へ</button>
     <button class="btn sm ghost" data-mv="${idx}:1">↓ 後ろへ</button>
@@ -792,7 +845,9 @@ function renderSim() {
 
   /* ---- 畝ボード ---- */
   let h = '<h2 class="sec">③ 畝の割り当て</h2>';
-  h += '<div class="tiny" style="margin:-6px 0 10px">各行をタップすると、作型・畝・株数の変更と並び替えができます。並び順は畝の先頭からの配置順です。</div>';
+  h += `<div class="note blue" style="margin:-2px 0 12px"><strong>株数は「間引き後の最終株数」です</strong>
+    株間は最終株間で計算しています。種からの作型では、実際にまく粒数はこれより多くなります（各行に表示）。
+    各行をタップすると、作型・畝・株数の変更と並び替えができます。</div>`;
   h += '<div class="beds">';
   for (let b = 0; b < lay.count; b++) {
     const name = '畝' + (b + 1);
@@ -818,7 +873,9 @@ function renderSim() {
               data-edopen="${idx}" role="button" tabindex="0">
         <span>${v.emoji} <b>${esc(v.name)}</b> ${it.qty}株<br>
         <span class="tiny">${rows}条（株間${v.spacing.plant}cm）＝ 畝の${len}cm ／ ${qtyLabel(v, it.qty)}<br>
-        ${esc(p.label)}／${dekLabel(a)}〜${dekLabel(e)}</span></span>
+        ${esc(p.label)}／${dekLabel(a)}〜${dekLabel(e)}${
+          (() => { const n = sowingNeed(v, p, it.qty, bedObj); return n ? '<br>まく量：' + esc(n.text) : ''; })()
+        }</span></span>
         <span class="slot-edit-mark">${editing ? '×' : '編集'}</span></div>`;
       if (editing) h += slotEditorHtml(it, idx);
     });
