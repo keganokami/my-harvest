@@ -396,6 +396,28 @@ table.data td.num, table.data th.num { text-align: right; font-variant-numeric: 
 }
 .qbtn:active { background: var(--line); }
 
+/* ---------- 畝の取り方の候補 ---------- */
+.sugg { margin-top: 12px; border-top: 1px dashed var(--line); padding-top: 10px; }
+.sugg-t { font-size: 12px; font-weight: 700; margin-bottom: 7px; }
+.sugg-item {
+  display: block; width: 100%; text-align: left; cursor: pointer;
+  background: var(--bg-sub); border: 1px solid var(--line); border-radius: 9px;
+  padding: 9px 11px; margin-bottom: 6px; font-family: inherit; color: var(--fg);
+  min-height: 44px; position: relative;
+}
+.sugg-item:active { opacity: .75; }
+.sugg-item.cur { background: var(--green-light); border-color: var(--green); }
+.sugg-item .sg-main { display: block; font-size: 13px; font-weight: 600; }
+.sugg-item .sg-sub { display: block; font-size: 11px; color: var(--fg-mute); margin-top: 2px; }
+.sugg-item .sg-cur {
+  position: absolute; top: 8px; right: 10px; font-size: 10px; font-weight: 700;
+  color: var(--green-dark);
+}
+
+/* ---------- 敷地の4辺の入力 ---------- */
+.edges { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.edges .field { margin-bottom: 0; }
+
 /* ---------- 畑の平面図 ---------- */
 .plotwrap {
   background: var(--bg-card); border: 1px solid var(--line);

@@ -3,7 +3,7 @@
    ========================================================= */
 
 /** ビルド識別子（キャッシュの確認用。tools/release.sh が書き換える） */
-const BUILD = '20260907-0107';
+const BUILD = '20260907-2243';
 
 const APP = {
   today: new Date(),
@@ -126,14 +126,18 @@ function boot() {
   APP.nowDek = dateToDek(APP.today);
   APP.crops = Store.get('crops', []).map(ensureCropShape);   // 旧形式の記録も読めるよう整形
   APP.sim = Store.get('sim', null) || {};
-  // 旧形式（区画ベース）からの移行と既定値
-  if (APP.sim.plotW === undefined) {
-    APP.sim.plotW = 180; APP.sim.plotD = 270;
-    APP.sim.bedW = 70; APP.sim.pathW = 40;
-    if (APP.sim.beds !== undefined) APP.sim.items = [];   // 区画割りは畝に引き継げないので破棄
+  if (!APP.sim.edges) {
+    // 実測の敷地（四角形）を既定にする
+    APP.sim.edges = { left: 160, right: 140, top: 110, bottom: 140 };
+    APP.sim.bedW = 50;
+    APP.sim.pathW = 0;   // 小さな敷地なので、外周から作業する前提で通路を取らない
+    // 長方形前提／区画前提の古い割り当ては引き継げないので破棄
+    if (APP.sim.plotW !== undefined || APP.sim.beds !== undefined) APP.sim.items = [];
   }
+  if (!APP.sim.dir) APP.sim.dir = 'ns';
   if (!Array.isArray(APP.sim.items)) APP.sim.items = [];
-  delete APP.sim.areaM2; delete APP.sim.beds; delete APP.sim.planters; delete APP.sim.sun;
+  delete APP.sim.areaM2; delete APP.sim.beds; delete APP.sim.planters;
+  delete APP.sim.sun; delete APP.sim.plotW; delete APP.sim.plotD;
   {
     const lay = bedLayout(APP.sim);
     APP.sim.items = APP.sim.items.filter(it =>

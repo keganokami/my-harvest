@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="my-harvest">
 <meta name="format-detection" content="telephone=no">
-<link rel="stylesheet" href="assets/style.css?v=20260907-0107">
+<link rel="stylesheet" href="assets/style.css?v=20260907-2243">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌱</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%234a7c3f'/><text y='.88em' x='8' font-size='78'>🌱</text></svg>">
 </head>
@@ -86,46 +86,54 @@
 
     <div class="card">
       <h3>① 敷地と畝の設定</h3>
+      <div class="tiny" style="margin:-4px 0 10px">
+        4辺の実測値（cm）を入れてください。長方形でなくてもかまいません。
+        左右・上下が同じなら長方形として扱います。
+      </div>
+      <div class="edges">
+        <div class="field"><label class="f">上辺（北側）</label>
+          <input type="number" id="edgeTop" min="30" max="2000" inputmode="numeric"></div>
+        <div class="field"><label class="f">下辺（南側）</label>
+          <input type="number" id="edgeBottom" min="30" max="2000" inputmode="numeric"></div>
+        <div class="field"><label class="f">左辺（西側）</label>
+          <input type="number" id="edgeLeft" min="30" max="2000" inputmode="numeric"></div>
+        <div class="field"><label class="f">右辺（東側）</label>
+          <input type="number" id="edgeRight" min="30" max="2000" inputmode="numeric"></div>
+      </div>
       <div class="row">
         <div class="field">
-          <label class="f">敷地の幅（cm）</label>
-          <select id="simPlotW">
-            <option value="90">90cm（1畳の短辺）</option>
-            <option value="120">120cm</option>
-            <option value="180" selected>180cm（3畳の短辺）</option>
-            <option value="270">270cm</option>
-            <option value="360">360cm</option>
-          </select>
-        </div>
-        <div class="field">
-          <label class="f">敷地の奥行き（cm）</label>
-          <select id="simPlotD">
-            <option value="180">180cm</option>
-            <option value="200">200cm</option>
-            <option value="270" selected>270cm（3畳の長辺）</option>
-            <option value="360">360cm</option>
-            <option value="450">450cm</option>
+          <label class="f">畝の向き</label>
+          <select id="simDir">
+            <option value="ns">南北（日当たりが均等・おすすめ）</option>
+            <option value="ew">東西（横長の敷地で本数を稼げる）</option>
           </select>
         </div>
         <div class="field">
           <label class="f">畝の幅（cm）</label>
           <select id="simBedW">
+            <option value="40">40cm（細畝・葉物向き）</option>
+            <option value="50">50cm</option>
             <option value="60">60cm（葉物・根菜向き）</option>
-            <option value="70" selected>70cm（標準）</option>
+            <option value="70">70cm（標準）</option>
             <option value="90">90cm（果菜の2条植え）</option>
+            <option value="100">100cm</option>
+            <option value="110">110cm（両側から手が届く上限）</option>
             <option value="120">120cm（幅広）</option>
           </select>
         </div>
         <div class="field">
           <label class="f">通路の幅（cm）</label>
           <select id="simPathW">
-            <option value="30">30cm（最小限）</option>
-            <option value="40" selected>40cm（標準）</option>
+            <option value="0">通路なし（外周から手が届く）</option>
+            <option value="25">25cm（最小限）</option>
+            <option value="30">30cm</option>
+            <option value="40">40cm（標準）</option>
             <option value="50">50cm（作業しやすい）</option>
           </select>
         </div>
       </div>
       <div id="simLayout" style="margin-top:6px"></div>
+      <div id="simSuggest"></div>
     </div>
 
     <div class="card">
@@ -236,16 +244,16 @@
   <span id="buildVer" class="tiny"></span>
 </footer>
 
-<script src="js/core.js?v=20260907-0107"></script>
-<script src="data/veg-leaf.js?v=20260907-0107"></script>
-<script src="data/veg-root.js?v=20260907-0107"></script>
-<script src="data/veg-fruit.js?v=20260907-0107"></script>
-<script src="data/veg-allium.js?v=20260907-0107"></script>
-<script src="data/knowledge.js?v=20260907-0107"></script>
-<script src="js/calendar.js?v=20260907-0107"></script>
-<script src="js/advisor.js?v=20260907-0107"></script>
-<script src="js/journal.js?v=20260907-0107"></script>
-<script src="js/simulator.js?v=20260907-0107"></script>
-<script src="js/app.js?v=20260907-0107"></script>
+<script src="js/core.js?v=20260907-2243"></script>
+<script src="data/veg-leaf.js?v=20260907-2243"></script>
+<script src="data/veg-root.js?v=20260907-2243"></script>
+<script src="data/veg-fruit.js?v=20260907-2243"></script>
+<script src="data/veg-allium.js?v=20260907-2243"></script>
+<script src="data/knowledge.js?v=20260907-2243"></script>
+<script src="js/calendar.js?v=20260907-2243"></script>
+<script src="js/advisor.js?v=20260907-2243"></script>
+<script src="js/journal.js?v=20260907-2243"></script>
+<script src="js/simulator.js?v=20260907-2243"></script>
+<script src="js/app.js?v=20260907-2243"></script>
 </body>
 </html>

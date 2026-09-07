@@ -24,19 +24,114 @@ function capQty(v, n) { return Math.max(1, Math.min(n, MAX_QTY[v.id] || 999)); }
    畝の計算
    --------------------------------------------------------- */
 
-/** 敷地の寸法から畝の本数と長さを割り出す */
+/* --- 敷地の形（四角形） ---------------------------------
+   4辺の長さから頂点を決める。左辺を垂直に固定して基準にする。
+   左右・上下が等しければ長方形になる。
+   ------------------------------------------------------- */
+
+/** 2円の交点（中心 p1 半径 r1 と 中心 p2 半径 r2）。無ければ null */
+function circleIntersect(p1, r1, p2, r2) {
+  const dx = p2.x - p1.x, dy = p2.y - p1.y;
+  const d = Math.hypot(dx, dy);
+  if (d > r1 + r2 || d < Math.abs(r1 - r2) || d === 0) return null;
+  const a = (r1 * r1 - r2 * r2 + d * d) / (2 * d);
+  const h2 = r1 * r1 - a * a;
+  if (h2 < 0) return null;
+  const h = Math.sqrt(h2);
+  const mx = p1.x + a * dx / d, my = p1.y + a * dy / d;
+  return [
+    { x: mx + h * dy / d, y: my - h * dx / d },
+    { x: mx - h * dy / d, y: my + h * dx / d }
+  ];
+}
+
+/** 敷地の4頂点 [左上, 右上, 右下, 左下]。成立しない寸法なら null */
+function plotPolygon(e) {
+  const A = { x: 0, y: 0 };            // 左上
+  const B = { x: e.top, y: 0 };        // 右上（上辺の長さ）
+  const D = { x: 0, y: e.left };       // 左下（左辺の長さ）
+  const hits = circleIntersect(B, e.right, D, e.bottom);
+  if (!hits) return null;
+  // 下側（y が大きい方）を右下の頂点とする
+  const C = hits[0].y >= hits[1].y ? hits[0] : hits[1];
+  if (C.x <= 0 || C.y <= 0) return null;
+  return [A, B, C, D];
+}
+
+/** 多角形を x/y 入れ替え（畝を東西方向に走らせるときに使う） */
+function swapPoly(poly) { return poly.map(p => ({ x: p.y, y: p.x })); }
+
+/** 多角形の面積（cm²） */
+function polyArea(poly) {
+  let a = 0;
+  for (let i = 0; i < poly.length; i++) {
+    const p = poly[i], q = poly[(i + 1) % poly.length];
+    a += p.x * q.y - q.x * p.y;
+  }
+  return Math.abs(a) / 2;
+}
+
+/** x の位置で多角形が縦にどこからどこまでか。外なら null */
+function spanAtX(poly, x) {
+  const ys = [];
+  for (let i = 0; i < poly.length; i++) {
+    const p = poly[i], q = poly[(i + 1) % poly.length];
+    if (p.x === q.x) { if (Math.abs(p.x - x) < 1e-6) { ys.push(p.y, q.y); } continue; }
+    const lo = Math.min(p.x, q.x), hi = Math.max(p.x, q.x);
+    if (x < lo - 1e-6 || x > hi + 1e-6) continue;
+    ys.push(p.y + (q.y - p.y) * (x - p.x) / (q.x - p.x));
+  }
+  if (ys.length < 2) return null;
+  return { top: Math.min.apply(null, ys), bottom: Math.max.apply(null, ys) };
+}
+
+/** 幅[x1,x2]の帯が敷地に収まる範囲。帯の全域で共通の上端・下端をとる */
+function stripSpan(poly, x1, x2) {
+  let top = -Infinity, bottom = Infinity;
+  const N = 12;
+  for (let i = 0; i <= N; i++) {
+    const sp = spanAtX(poly, x1 + (x2 - x1) * i / N);
+    if (!sp) return null;
+    top = Math.max(top, sp.top);
+    bottom = Math.min(bottom, sp.bottom);
+  }
+  const len = bottom - top;
+  return len > 0 ? { top: top, len: len } : null;
+}
+
+const MIN_BED_LEN = 50;   // これより短い畝は作らない
+
+/** 敷地の形と畝幅・通路幅から、畝の本数・位置・長さを割り出す */
 function bedLayout(s) {
-  const unit = s.bedW + s.pathW;
-  // 畝は奥行き方向に伸ばし、幅方向に「畝＋通路」で並べる（最後の通路は不要）
-  const count = s.plotW > 0 ? Math.max(0, Math.floor((s.plotW + s.pathW) / unit)) : 0;
+  const e = s.edges;
+  const poly0 = plotPolygon(e);
+  if (!poly0) return { count: 0, beds: [], poly: null, ok: false, plotM2: 0, areaM2: 0, tatami: 0, bedW: s.bedW };
+  const poly = s.dir === 'ew' ? swapPoly(poly0) : poly0;   // 東西畝なら軸を入れ替えて計算
+  const maxX = Math.max.apply(null, poly.map(p => p.x));
+
+  const beds = [];
+  let x = 0, guard = 0;
+  while (x + s.bedW <= maxX + 1e-6 && guard++ < 20) {
+    const sp = stripSpan(poly, x, x + s.bedW);
+    if (sp && sp.len >= MIN_BED_LEN) {
+      beds.push({ x: x, w: s.bedW, top: sp.top, len: Math.round(sp.len) });
+    }
+    x += s.bedW + s.pathW;
+  }
+  const plotM2 = polyArea(poly0) / 10000;
+  const areaM2 = beds.reduce((a, b) => a + b.w * b.len, 0) / 10000;
   return {
-    count: count,
-    len: s.plotD,                                   // 畝1本の長さ(cm)
-    bedW: s.bedW,
-    areaM2: count * s.bedW * s.plotD / 10000,       // 畝の合計面積
-    plotM2: s.plotW * s.plotD / 10000,              // 通路を含む敷地面積
-    tatami: (s.plotW * s.plotD / 10000) / 1.62
+    count: beds.length, beds: beds, poly: poly0, layoutPoly: poly, ok: true,
+    bedW: s.bedW, plotM2: plotM2, areaM2: areaM2, tatami: plotM2 / 1.62,
+    totalLen: beds.reduce((a, b) => a + b.len, 0)
   };
+}
+
+/** 指定した畝（place 文字列）の長さ */
+function bedLenOf(place) {
+  const lay = bedLayout(APP.sim);
+  const i = parseInt(String(place).slice(3), 10);
+  return (lay.beds[i] || {}).len || 0;
 }
 
 /** その野菜を畝幅に何条植えられるか */
@@ -132,21 +227,38 @@ function simSaveAndRender() {
 
 function initSimForm() {
   const s = APP.sim;
-  const ids = ['simPlotW', 'simPlotD', 'simBedW', 'simPathW'];
-  document.getElementById('simPlotW').value = String(s.plotW);
-  document.getElementById('simPlotD').value = String(s.plotD);
+  const ids = ['edgeLeft', 'edgeRight', 'edgeTop', 'edgeBottom', 'simBedW', 'simPathW', 'simDir'];
+  document.getElementById('edgeLeft').value = String(s.edges.left);
+  document.getElementById('edgeRight').value = String(s.edges.right);
+  document.getElementById('edgeTop').value = String(s.edges.top);
+  document.getElementById('edgeBottom').value = String(s.edges.bottom);
   document.getElementById('simBedW').value = String(s.bedW);
   document.getElementById('simPathW').value = String(s.pathW);
+  document.getElementById('simDir').value = s.dir;
 
+  const readEdge = (id, fallback) => {
+    const n = parseInt(document.getElementById(id).value, 10);
+    return (isFinite(n) && n >= 30 && n <= 2000) ? n : fallback;
+  };
   ids.forEach(id => {
     document.getElementById(id).onchange = () => {
-      s.plotW = parseInt(document.getElementById('simPlotW').value, 10) || 0;
-      s.plotD = parseInt(document.getElementById('simPlotD').value, 10) || 0;
+      s.edges = {
+        left: readEdge('edgeLeft', s.edges.left),
+        right: readEdge('edgeRight', s.edges.right),
+        top: readEdge('edgeTop', s.edges.top),
+        bottom: readEdge('edgeBottom', s.edges.bottom)
+      };
+      document.getElementById('edgeLeft').value = String(s.edges.left);
+      document.getElementById('edgeRight').value = String(s.edges.right);
+      document.getElementById('edgeTop').value = String(s.edges.top);
+      document.getElementById('edgeBottom').value = String(s.edges.bottom);
       s.bedW = parseInt(document.getElementById('simBedW').value, 10) || 70;
       s.pathW = parseInt(document.getElementById('simPathW').value, 10) || 40;
+      s.dir = document.getElementById('simDir').value;
       // 無くなった畝の割り当てを整理
       const lay = bedLayout(s);
       s.items = s.items.filter(it => parseInt(it.place.slice(3), 10) < lay.count);
+      APP.simEdit = null;
       fillSimPlace();
       simSaveAndRender();
     };
@@ -183,7 +295,7 @@ function fillSimPlace() {
   const sel = document.getElementById('simPlace');
   const lay = bedLayout(APP.sim);
   let h = '';
-  for (let i = 0; i < lay.count; i++) h += `<option value="bed${i}">畝${i + 1}（幅${lay.bedW}cm × 長さ${lay.len}cm）</option>`;
+  lay.beds.forEach((b, i) => { h += `<option value="bed${i}">畝${i + 1}（幅${b.w}cm × 長さ${b.len}cm）</option>`; });
   sel.innerHTML = h || '<option value="">（畝がありません）</option>';
 }
 
@@ -195,25 +307,86 @@ function updateSimHint() {
   const lay = bedLayout(s);
   const [a, b] = planOccupy(p);
 
+  const bedLen = bedLenOf(place) || (lay.beds[0] || {}).len || 0;
   let hint = `占有期間：<b>${dekLabel(a)}〜${dekLabel(b)}</b>（約${Math.round(rangeLen(a, b) * DEK_DAYS)}日）`;
   const rows = rowsInBed(v, lay.bedW);
-  const cap = qtyForLength(v, lay.len, lay.bedW);
+  const cap = qtyForLength(v, bedLen, lay.bedW);
   hint += `<br>畝幅${lay.bedW}cmに <b>${rows}条</b>（条間${v.spacing.row}cm）／ 株間${v.spacing.plant}cm`
-        + `<br>畝1本（${lay.len}cm）を使い切ると <b>${cap}株</b>`;
+        + `<br>この畝（${bedLen}cm）を使い切ると <b>${cap}株</b>`;
   document.getElementById('simQty').value = Math.max(1, Math.min(cap, capQty(v, cap)));
   const qty = parseInt(document.getElementById('simQty').value, 10) || 1;
   hint += ` ／ この株数なら畝の <b>${bedLengthFor(v, qty, lay.bedW)}cm</b> を使います`;
 
   // 畝幅を変えると何条・何株になるか
   hint += `<div class="wcmp"><div class="wcmp-t">${esc(v.name)}は畝幅でこう変わります</div><table>
-    <tr><th>畝幅</th>${widthComparison(v, lay.len).map(c =>
+    <tr><th>畝幅</th>${widthComparison(v, bedLen).map(c =>
       `<th class="${c.bedW === lay.bedW ? 'cur' : ''}">${c.bedW}cm</th>`).join('')}</tr>
-    <tr><th>条数</th>${widthComparison(v, lay.len).map(c =>
+    <tr><th>条数</th>${widthComparison(v, bedLen).map(c =>
       `<td class="${c.bedW === lay.bedW ? 'cur' : ''}">${c.rows}条</td>`).join('')}</tr>
-    <tr><th>畝1本(${lay.len}cm)</th>${widthComparison(v, lay.len).map(c =>
+    <tr><th>この畝(${bedLen}cm)</th>${widthComparison(v, bedLen).map(c =>
       `<td class="${c.bedW === lay.bedW ? 'cur' : ''}">${c.perBed}株</td>`).join('')}</tr>
     </table><div class="tiny">条間${v.spacing.row}cm・株間${v.spacing.plant}cm から算出。畝幅は「① 敷地と畝の設定」で変えられます。</div></div>`;
   document.getElementById('simHint').innerHTML = hint;
+}
+
+/* ---------------------------------------------------------
+   畝の取り方の候補
+   敷地が小さいほど、畝幅と通路の取り方で栽培面積が大きく変わる。
+   --------------------------------------------------------- */
+const BED_W_CHOICES = [40, 50, 60, 70, 90, 100, 110, 120];
+const PATH_W_CHOICES = [0, 25, 30, 40];
+
+function bedSuggestions(edges) {
+  const out = [];
+  const seen = {};
+  ['ns', 'ew'].forEach(dir => BED_W_CHOICES.forEach(bedW => PATH_W_CHOICES.forEach(pathW => {
+    const lay = bedLayout({ edges: edges, bedW: bedW, pathW: pathW, dir: dir });
+    if (!lay.ok || !lay.count) return;
+    // 同じ結果になる組み合わせ（通路が効かない場合など）は最小の通路幅だけ残す
+    const key = dir + ':' + lay.beds.map(b => b.w + 'x' + b.len).join(',');
+    if (seen[key]) return;
+    seen[key] = 1;
+    out.push({
+      dir: dir, bedW: bedW, pathW: pathW, count: lay.count,
+      area: lay.areaM2, beds: lay.beds.slice(),
+      // 面積を主に、南北方向と輪作しやすさ（2本以上）を少し加点
+      score: lay.areaM2 + (dir === 'ns' ? 0.08 : 0) + (lay.count >= 2 ? 0.06 : 0)
+    });
+  })));
+  return out.sort((a, b) => b.score - a.score).slice(0, 5);
+}
+
+function renderSuggestions() {
+  const box = document.getElementById('simSuggest');
+  if (!box) return;
+  const s = APP.sim;
+  const list = bedSuggestions(s.edges);
+  if (!list.length) { box.innerHTML = ''; return; }
+  let h = '<div class="sugg"><div class="sugg-t">畝の取り方の候補（栽培面積の大きい順）</div>';
+  list.forEach((c, i) => {
+    const cur = c.dir === s.dir && c.bedW === s.bedW && c.pathW === s.pathW;
+    h += `<button class="sugg-item${cur ? ' cur' : ''}" data-sugg="${i}">
+      <span class="sg-main">${c.dir === 'ns' ? '南北' : '東西'} ／ 畝${c.bedW}cm ／ 通路${c.pathW === 0 ? 'なし' : c.pathW + 'cm'}</span>
+      <span class="sg-sub">畝${c.count}本（${c.beds.map(b => b.w + '×' + b.len + 'cm').join('、')}） 栽培面積 ${c.area.toFixed(2)}m²</span>
+      ${cur ? '<span class="sg-cur">選択中</span>' : ''}
+    </button>`;
+  });
+  h += '</div>';
+  box.innerHTML = h;
+  box.querySelectorAll('[data-sugg]').forEach(b => {
+    b.onclick = () => {
+      const c = list[+b.dataset.sugg];
+      APP.sim.dir = c.dir; APP.sim.bedW = c.bedW; APP.sim.pathW = c.pathW;
+      const lay = bedLayout(APP.sim);
+      APP.sim.items = APP.sim.items.filter(it => parseInt(it.place.slice(3), 10) < lay.count);
+      APP.simEdit = null;
+      document.getElementById('simDir').value = c.dir;
+      document.getElementById('simBedW').value = String(c.bedW);
+      document.getElementById('simPathW').value = String(c.pathW);
+      fillSimPlace();
+      simSaveAndRender();
+    };
+  });
 }
 
 function presetSim(vegId) {
@@ -230,9 +403,15 @@ function validateSim() {
   const lay = bedLayout(s);
   const warns = [];
 
+  if (!lay.ok) {
+    warns.push({ level: 'error', place: '敷地',
+      msg: '入力された4辺の長さでは四角形になりません（1辺が他の3辺の合計より長い、など）。実測値を確認してください。' });
+    return warns;
+  }
   for (let b = 0; b < lay.count; b++) {
     const items = s.items.filter(it => it.place === 'bed' + b);
     const name = '畝' + (b + 1);
+    const bedLen = lay.beds[b].len;
 
     // 長さ：各旬に必要な畝の長さ
     let peak = 0, peakDek = 0;
@@ -240,9 +419,9 @@ function validateSim() {
       const used = bedPacking(b, d).used;
       if (used > peak) { peak = used; peakDek = d; }
     }
-    if (peak > lay.len + 1) {
+    if (peak > bedLen + 1) {
       warns.push({ level: 'error', place: name,
-        msg: `${name}は${dekLabel(peakDek)}に長さが足りません（必要 ${Math.round(peak)}cm / 畝の長さ ${lay.len}cm）。株数を減らすか、別の畝・別の時期にずらしてください。` });
+        msg: `${name}は${dekLabel(peakDek)}に長さが足りません（必要 ${Math.round(peak)}cm / この畝の長さ ${bedLen}cm）。株数を減らすか、別の畝・別の時期にずらしてください。` });
     }
 
     // 連作：同じ畝に同じ科
@@ -383,8 +562,9 @@ function autoPlan() {
 
   // --- 畝 ---
   for (let b = 0; b < lay.count; b++) {
+    const bedLen = lay.beds[b].len;
     fill({
-      place: 'bed' + b, cap: lay.len, threshold: lay.len * 0.25, maxItems: 6, useRotation: true,
+      place: 'bed' + b, cap: bedLen, threshold: bedLen * 0.25, maxItems: 6, useRotation: true,
       pick: {
         place: 'plot', skipShade: true,
         qtyOf: (v, freeLen) => qtyForLength(v, freeLen, lay.bedW),
@@ -428,17 +608,18 @@ function slotEditorHtml(it, idx) {
   const v = byId(it.vegId);
   const p = v.plans.find(x => x.id === it.planId) || v.plans[0];
   const lay = bedLayout(APP.sim);
+  const bedLen = bedLenOf(it.place);
   const rows = rowsInBed(v, lay.bedW);
   const len = bedLengthFor(v, it.qty, lay.bedW);
-  const max = qtyForLength(v, lay.len, lay.bedW);
-  const over = len > lay.len;
+  const max = qtyForLength(v, bedLen, lay.bedW);
+  const over = len > bedLen;
   let h = `<div class="slot-edit" data-editor="${idx}">`;
   h += `<div class="field"><label class="f">作型</label>
     <select data-ed="planId">${v.plans.map(x =>
       `<option value="${x.id}"${x.id === p.id ? ' selected' : ''}>${START_TYPE[x.start].icon} ${esc(x.label)}</option>`).join('')}</select></div>`;
   h += `<div class="field"><label class="f">畝</label>
-    <select data-ed="place">${Array.from({ length: lay.count }, (_, i) =>
-      `<option value="bed${i}"${it.place === 'bed' + i ? ' selected' : ''}>畝${i + 1}</option>`).join('')}</select></div>`;
+    <select data-ed="place">${lay.beds.map((b, i) =>
+      `<option value="bed${i}"${it.place === 'bed' + i ? ' selected' : ''}>畝${i + 1}（${b.len}cm）</option>`).join('')}</select></div>`;
   h += `<div class="field"><label class="f">株数（畝1本に最大 ${max}株）</label>
     <div class="qty">
       <button class="qbtn" data-q="${idx}:-10" aria-label="10減らす">−10</button>
@@ -448,7 +629,7 @@ function slotEditorHtml(it, idx) {
       <button class="qbtn" data-q="${idx}:10" aria-label="10増やす">＋10</button>
     </div>
     <div class="tiny${over ? ' over' : ''}">${rows}条 × ${Math.ceil(it.qty / rows)}株 ＝ 畝の <b>${len}cm</b>
-      ／ 畝の長さ ${lay.len}cm${over ? '　⚠️ 畝からはみ出します' : ''}</div></div>`;
+      ／ この畝の長さ ${bedLen}cm${over ? '　⚠️ 畝からはみ出します' : ''}</div></div>`;
   h += `<div class="row btnrow">
     <button class="btn sm ghost" data-mv="${idx}:-1">↑ 前へ</button>
     <button class="btn sm ghost" data-mv="${idx}:1">↓ 後ろへ</button>
@@ -472,12 +653,19 @@ function renderSim() {
   /* ---- 畝の構成 ---- */
   const info = document.getElementById('simLayout');
   if (info) {
-    info.innerHTML = lay.count === 0
-      ? '<div class="note red" style="margin:0"><strong>畝が作れません</strong>敷地の幅が「畝幅＋通路幅」より狭くなっています。畝幅か通路幅を小さくしてください。</div>'
-      : `<div class="note green" style="margin:0"><strong>この敷地には 畝 ${lay.count}本</strong>
-          幅${lay.bedW}cm × 長さ${lay.len}cm の畝が${lay.count}本（通路${s.pathW}cm）。
-          栽培面積 ${lay.areaM2.toFixed(2)}m² ／ 敷地 ${lay.plotM2.toFixed(2)}m²（約${lay.tatami.toFixed(1)}畳）。
-          <span class="tiny">畝の合計の長さ ${lay.count * lay.len}cm がこのシミュレーションの「容量」です。</span></div>`;
+    if (!lay.ok) {
+      info.innerHTML = '<div class="note red" style="margin:0"><strong>この寸法では四角形になりません</strong>1辺が他の3辺の合計より長くなっているようです。実測値を確認してください。</div>';
+    } else if (lay.count === 0) {
+      info.innerHTML = `<div class="note red" style="margin:0"><strong>畝が作れません</strong>
+        「畝幅＋通路幅」が敷地に収まりません。畝幅か通路幅を小さくするか、畝の向きを変えてみてください。</div>`;
+    } else {
+      info.innerHTML = `<div class="note green" style="margin:0"><strong>この敷地には 畝 ${lay.count}本</strong>
+        ${lay.beds.map((b, i) => `畝${i + 1}: 幅${b.w}cm × 長さ${b.len}cm`).join(' ／ ')}（通路${s.pathW}cm・${s.dir === 'ns' ? '南北' : '東西'}方向）<br>
+        栽培面積 ${lay.areaM2.toFixed(2)}m² ／ 敷地 ${lay.plotM2.toFixed(2)}m²（約${lay.tatami.toFixed(1)}畳）
+        <span class="tiny">畝の合計の長さ ${lay.totalLen}cm がこのシミュレーションの「容量」です。${
+          s.pathW === 0 ? '通路なしの設定です。敷地の外周から手を伸ばして作業し、畝の上には乗らないでください（土が締まって根が入らなくなります）。' : ''
+        }</span></div>`;
+    }
   }
 
   /* ---- 畝ボード ---- */
@@ -486,12 +674,13 @@ function renderSim() {
   h += '<div class="beds">';
   for (let b = 0; b < lay.count; b++) {
     const name = '畝' + (b + 1);
+    const bedLen = lay.beds[b].len;
     const items = s.items.filter(it => it.place === 'bed' + b);
     // その畝のピーク使用長
     let peak = 0;
     for (let d = 0; d < 36; d++) peak = Math.max(peak, bedPacking(b, d).used);
     h += `<div class="bed"><h4>${name}</h4>
-      <div class="bmeta">幅${lay.bedW}cm × 長さ${lay.len}cm ／ 最も混む時期の使用 ${Math.round(peak)}cm（${Math.round(peak / lay.len * 100)}%）</div>`;
+      <div class="bmeta">幅${lay.beds[b].w}cm × 長さ${bedLen}cm ／ 最も混む時期の使用 ${Math.round(peak)}cm（${Math.round(peak / bedLen * 100)}%）</div>`;
     if (!items.length) h += '<div class="tiny">（空き）</div>';
     items.forEach(it => {
       const v = byId(it.vegId);
@@ -513,6 +702,8 @@ function renderSim() {
     h += '</div>';
   }
   h += '</div>';
+  renderSuggestions();
+
   const board = document.getElementById('simBoard');
   board.innerHTML = h;
 
@@ -684,106 +875,125 @@ function renderSim() {
    畑の平面図（上から見た図）
    畝・通路・株の位置を実寸で描く。時期を変えて年間の姿を確認できる。
    --------------------------------------------------------- */
-const PLOT_PAD = { l: 30, t: 30, r: 10, b: 24 };
+const PLOT_PAD = { l: 40, t: 32, r: 40, b: 28 };
 const PLOT_VIEW_W = 360;
 const MAX_DOTS = 900;   // これを超えるときは点ではなく条の線で描く
-
-function plotScale(lay) {
-  const s = APP.sim;
-  const usable = PLOT_VIEW_W - PLOT_PAD.l - PLOT_PAD.r;
-  return s.plotW > 0 ? usable / s.plotW : 1;
-}
 
 function renderPlotSVG(dekad) {
   const s = APP.sim;
   const lay = bedLayout(s);
-  if (!lay.count) return '<div class="note red" style="margin:0"><strong>畝がありません</strong>敷地の幅を広げるか、畝幅・通路幅を小さくしてください。</div>';
+  if (!lay.ok) return '<div class="note red" style="margin:0"><strong>この寸法では四角形になりません</strong>4辺の実測値を確認してください。</div>';
+  if (!lay.count) return '<div class="note red" style="margin:0"><strong>畝がありません</strong>畝幅か通路幅を小さくするか、畝の向きを変えてください。</div>';
 
-  const k = plotScale(lay);
+  const poly = lay.poly;                       // 実際の敷地の形（左上が原点）
+  const maxX = Math.max.apply(null, poly.map(p => p.x));
+  const maxY = Math.max.apply(null, poly.map(p => p.y));
+  const k = (PLOT_VIEW_W - PLOT_PAD.l - PLOT_PAD.r) / maxX;
   const W = PLOT_VIEW_W;
-  const H = PLOT_PAD.t + s.plotD * k + PLOT_PAD.b;
+  const H = PLOT_PAD.t + maxY * k + PLOT_PAD.b;
   const x0 = PLOT_PAD.l, y0 = PLOT_PAD.t;
-  const cm = v => v * k;
+  const X = v => x0 + v * k, Y = v => y0 + v * k, cm = v => v * k;
 
-  let g = '';
-
-  /* 敷地全体（＝通路の地色） */
-  g += `<rect x="${x0}" y="${y0}" width="${cm(s.plotW)}" height="${cm(s.plotD)}"
-         fill="var(--bg-sub)" stroke="var(--line)" stroke-width="1"/>`;
-  g += `<pattern id="pathHatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-          <line x1="0" y1="0" x2="0" y2="6" stroke="var(--line)" stroke-width="2"/></pattern>`;
-  g += `<rect x="${x0}" y="${y0}" width="${cm(s.plotW)}" height="${cm(s.plotD)}" fill="url(#pathHatch)" opacity=".5"/>`;
-
-  /* 方位と寸法 */
-  g += `<text x="${x0 + cm(s.plotW) / 2}" y="14" text-anchor="middle" font-size="10" fill="var(--fg-mute)">↑ 北</text>`;
-  g += `<text x="${x0 + cm(s.plotW) / 2}" y="${H - 8}" text-anchor="middle" font-size="9" fill="var(--fg-faint)">敷地の幅 ${s.plotW}cm</text>`;
-  g += `<text x="10" y="${y0 + cm(s.plotD) / 2}" text-anchor="middle" font-size="9" fill="var(--fg-faint)"
-          transform="rotate(-90 10 ${y0 + cm(s.plotD) / 2})">奥行き ${s.plotD}cm</text>`;
-
-  /* 目盛り（50cmごと） */
-  for (let d = 0; d <= s.plotD; d += 50) {
-    const y = y0 + cm(d);
-    g += `<line x1="${x0 - 4}" y1="${y}" x2="${x0}" y2="${y}" stroke="var(--fg-faint)" stroke-width="1"/>`;
-    if (d % 100 === 0) g += `<text x="${x0 - 6}" y="${y + 3}" text-anchor="end" font-size="8" fill="var(--fg-faint)">${d}</text>`;
+  /* 畝の矩形を、計算した座標系から実際の向きへ戻す */
+  function bedRect(bd) {
+    return s.dir === 'ew'
+      ? { x: bd.top, y: bd.x, w: bd.len, h: bd.w, along: 'x' }   // 東西畝：長さが横方向
+      : { x: bd.x, y: bd.top, w: bd.w, h: bd.len, along: 'y' };  // 南北畝：長さが縦方向
   }
 
+  let g = '';
+  g += `<pattern id="pathHatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+          <line x1="0" y1="0" x2="0" y2="6" stroke="var(--line)" stroke-width="2"/></pattern>`;
+
+  /* 敷地（＝通路の地色） */
+  const pts = poly.map(p => `${X(p.x).toFixed(1)},${Y(p.y).toFixed(1)}`).join(' ');
+  g += `<polygon points="${pts}" fill="var(--bg-sub)" stroke="var(--line)" stroke-width="1.2"/>`;
+  g += `<polygon points="${pts}" fill="url(#pathHatch)" opacity=".5"/>`;
+
+  /* 辺の長さ */
+  const e = s.edges;
+  const mid = (p, q) => ({ x: (p.x + q.x) / 2, y: (p.y + q.y) / 2 });
+  const lbl = (p, q, t, dx, dy) => {
+    const m = mid(p, q);
+    return `<text x="${X(m.x) + dx}" y="${Y(m.y) + dy}" text-anchor="middle" font-size="9"
+             fill="var(--fg-faint)">${t}</text>`;
+  };
+  g += lbl(poly[0], poly[1], e.top + 'cm', 0, -6);
+  g += lbl(poly[3], poly[2], e.bottom + 'cm', 0, 14);
+  g += lbl(poly[0], poly[3], e.left + 'cm', -18, 3);
+  g += lbl(poly[1], poly[2], e.right + 'cm', 20, 3);
+  g += `<text x="${X(maxX) + PLOT_PAD.r - 4}" y="13" text-anchor="end" font-size="10"
+          fill="var(--fg-mute)">↑ 北</text>`;
+
   /* 各畝 */
-  let legend = [];
+  const legend = [];
   let dotBudget = MAX_DOTS;
-  for (let b = 0; b < lay.count; b++) {
-    const bx = x0 + cm(b * (s.bedW + s.pathW));
-    const bw = cm(s.bedW);
-    g += `<rect x="${bx}" y="${y0}" width="${bw}" height="${cm(s.plotD)}"
+  lay.beds.forEach((bd, b) => {
+    const R = bedRect(bd);
+    g += `<rect x="${X(R.x).toFixed(1)}" y="${Y(R.y).toFixed(1)}"
+           width="${cm(R.w).toFixed(1)}" height="${cm(R.h).toFixed(1)}"
            fill="var(--bg-card)" stroke="var(--green)" stroke-width="1.2" rx="2"/>`;
-    g += `<text x="${bx + bw / 2}" y="${y0 - 5}" text-anchor="middle" font-size="9" font-weight="700" fill="var(--green)">畝${b + 1}</text>`;
+    g += `<text x="${X(R.x + R.w / 2).toFixed(1)}" y="${(Y(R.y) - 4).toFixed(1)}" text-anchor="middle"
+           font-size="9" font-weight="700" fill="var(--green)">畝${b + 1}</text>`;
 
     const pk = bedPacking(b, dekad);
     pk.segs.forEach((sg, i) => {
       const color = BED_COLORS[i % BED_COLORS.length];
-      const over = sg.start + sg.len > s.plotD;
-      const drawLen = Math.min(sg.len, Math.max(0, s.plotD - sg.start));
+      const over = sg.start + sg.len > bd.len;
+      const drawLen = Math.min(sg.len, Math.max(0, bd.len - sg.start));
       if (drawLen <= 0) return;
-      g += `<rect x="${bx}" y="${y0 + cm(sg.start)}" width="${bw}" height="${cm(drawLen)}"
+
+      /* 作物の区画（畝の長さ方向に沿って） */
+      const sx = R.along === 'y' ? R.x : R.x + sg.start;
+      const sy = R.along === 'y' ? R.y + sg.start : R.y;
+      const sw = R.along === 'y' ? R.w : drawLen;
+      const sh = R.along === 'y' ? drawLen : R.h;
+      g += `<rect x="${X(sx).toFixed(1)}" y="${Y(sy).toFixed(1)}"
+             width="${cm(sw).toFixed(1)}" height="${cm(sh).toFixed(1)}"
              fill="${color}" opacity="${over ? '.35' : '.18'}"
              stroke="${over ? 'var(--red)' : color}" stroke-width="${over ? 1.5 : 0.8}"
              ${over ? 'stroke-dasharray="4 2"' : ''}/>`;
 
       /* 株の点 */
-      const rows = rowPositions(sg.v, s.bedW);
-      const perRow = Math.ceil(sg.it.qty / rows.length);
-      const total = rows.length * perRow;
+      const rowsPos = rowPositions(sg.v, bd.w);
+      const perRow = Math.ceil(sg.it.qty / rowsPos.length);
+      const total = rowsPos.length * perRow;
       const r = Math.max(1.1, Math.min(cm(sg.v.spacing.plant) / 2.6, cm(sg.v.spacing.row) / 2.6, 5));
       if (total <= dotBudget) {
         dotBudget -= total;
         let n = 0;
         for (let j = 0; j < perRow; j++) {
-          const py = sg.start + j * sg.v.spacing.plant + sg.v.spacing.plant / 2;
-          if (py > s.plotD) break;
-          rows.forEach(rx => {
-            if (n++ >= sg.it.qty) return;
-            g += `<circle cx="${(bx + cm(rx)).toFixed(1)}" cy="${(y0 + cm(py)).toFixed(1)}" r="${r.toFixed(1)}" fill="${color}"/>`;
-          });
+          const along = sg.start + j * sg.v.spacing.plant + sg.v.spacing.plant / 2;
+          if (along > bd.len) break;
+          for (let ri = 0; ri < rowsPos.length; ri++) {
+            if (n++ >= sg.it.qty) break;
+            const px = R.along === 'y' ? R.x + rowsPos[ri] : R.x + along;
+            const py = R.along === 'y' ? R.y + along : R.y + rowsPos[ri];
+            g += `<circle cx="${X(px).toFixed(1)}" cy="${Y(py).toFixed(1)}" r="${r.toFixed(1)}" fill="${color}"/>`;
+          }
         }
       } else {
-        /* 株が多すぎるときは条の線で表す */
-        rows.forEach(rx => {
-          g += `<line x1="${(bx + cm(rx)).toFixed(1)}" y1="${y0 + cm(sg.start)}"
-                 x2="${(bx + cm(rx)).toFixed(1)}" y2="${y0 + cm(sg.start + drawLen)}"
+        rowsPos.forEach(rp => {
+          const p1 = R.along === 'y'
+            ? { x: R.x + rp, y: R.y + sg.start, x2: R.x + rp, y2: R.y + sg.start + drawLen }
+            : { x: R.x + sg.start, y: R.y + rp, x2: R.x + sg.start + drawLen, y2: R.y + rp };
+          g += `<line x1="${X(p1.x).toFixed(1)}" y1="${Y(p1.y).toFixed(1)}"
+                 x2="${X(p1.x2).toFixed(1)}" y2="${Y(p1.y2).toFixed(1)}"
                  stroke="${color}" stroke-width="${Math.max(1.5, r)}" stroke-linecap="round" opacity=".85"/>`;
         });
       }
-
       legend.push({ bed: b + 1, v: sg.v, color, seg: sg, over });
     });
 
-    /* 空いている部分に「空き」と入れる */
-    const rest = s.plotD - pk.used;
+    /* 空いている部分 */
+    const rest = bd.len - pk.used;
     if (rest > 25) {
-      const ry = y0 + cm(pk.used) + cm(rest) / 2;
-      g += `<text x="${bx + bw / 2}" y="${ry}" text-anchor="middle" font-size="9"
-             fill="var(--fg-faint)">空き ${Math.round(rest)}cm</text>`;
+      const cx = R.along === 'y' ? R.x + R.w / 2 : R.x + pk.used + rest / 2;
+      const cy = R.along === 'y' ? R.y + pk.used + rest / 2 : R.y + R.h / 2;
+      g += `<text x="${X(cx).toFixed(1)}" y="${Y(cy).toFixed(1)}" text-anchor="middle"
+             font-size="9" fill="var(--fg-faint)">空き ${Math.round(rest)}cm</text>`;
     }
-  }
+  });
 
   let html = `<svg viewBox="0 0 ${W} ${H.toFixed(0)}" class="plotsvg" role="img"
      aria-label="畑の平面図">${g}</svg>`;
