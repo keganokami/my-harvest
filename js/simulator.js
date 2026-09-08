@@ -159,9 +159,39 @@ function stripArea(poly, x1, x2) {
   return area;
 }
 
+/* 同じ設定・同じ作付けのあいだは計算結果を使い回す。
+   畝の形の計算は多角形の交差判定を含み、これを毎回やると
+   1回の再描画に数秒かかってしまう。 */
+let _simSig = null, _simCache = {};
+function simSig() {
+  const s = APP.sim;
+  if (!s || !s.edges) return 'none';
+  const e = s.edges;
+  return e.left + ',' + e.right + ',' + e.top + ',' + e.bottom
+    + '|' + s.bedW + ',' + s.pathW + ',' + s.dir + ',' + (s.people || 2)
+    + '|' + (s.items || []).map(i => i.vegId + ':' + i.planId + ':' + i.place + ':' + i.qty).join(';');
+}
+function simCache() {
+  const sig = simSig();
+  if (sig !== _simSig) { _simSig = sig; _simCache = {}; }
+  return _simCache;
+}
+function invalidateSimCache() { _simSig = null; _simCache = {}; }
+
 /** 敷地の形と畝幅・通路幅から、畝の位置と範囲を割り出す。
  *  畝は長方形に切り抜かず、条ごとに敷地の形に沿わせる（斜めの辺の分を捨てない）。 */
 function bedLayout(s) {
+  // APP.sim をそのまま渡された場合はキャッシュを使う
+  if (s === APP.sim) {
+    const c = simCache();
+    if (c.layout) return c.layout;
+  }
+  const r = bedLayoutRaw(s);
+  if (s === APP.sim) simCache().layout = r;
+  return r;
+}
+
+function bedLayoutRaw(s) {
   const e = s.edges;
   const poly0 = plotPolygon(e);
   if (!poly0) return { count: 0, beds: [], poly: null, ok: false, plotM2: 0, areaM2: 0, tatami: 0, bedW: s.bedW };
@@ -216,13 +246,18 @@ function bedLenOf(place) { const b = bedAt(place); return b ? b.len : 0; }
 
 /** 畝の中の各条について、敷地に収まる範囲（畝の先頭からの相対 cm）を返す */
 function rowRanges(v, bed) {
+  const c = simCache();
+  const key = 'rr:' + v.id + ':' + bed.x + ':' + bed.w;
+  if (c[key]) return c[key];
   const poly = bedLayout(APP.sim).layoutPoly;
   if (!poly) return [];
-  return rowPositions(v, bed.w).map(rx => {
+  const out = rowPositions(v, bed.w).map(rx => {
     const sp = spanAtX(poly, bed.x + rx);
     if (!sp) return { from: 0, to: 0 };
     return { from: Math.max(0, sp.top - bed.top), to: Math.max(0, sp.bottom - bed.top) };
   });
+  c[key] = out;
+  return out;
 }
 
 /** 畝の [start, start+len] の区間に、その野菜が何株入るか（条ごとに敷地の形を見る） */
@@ -234,14 +269,20 @@ function plantsIn(v, bed, start, len) {
   }, 0);
 }
 
-/** qty株を植えるのに必要な畝の長さ(cm)。条ごとの長さの違いを織り込む */
+/** qty株を植えるのに必要な畝の長さ(cm)。条ごとの長さの違いを織り込む。
+ *  長さは株間の倍数になるので、株間単位で二分探索する。 */
 function lengthForQty(v, bed, start, qty) {
   const gap = v.spacing.plant;
-  const limit = bed.len - start;
-  for (let len = gap; len <= limit + gap; len += gap) {
-    if (plantsIn(v, bed, start, Math.min(len, limit)) >= qty) return Math.min(len, limit);
+  const limit = Math.max(0, bed.len - start);
+  if (limit <= 0) return 0;
+  const maxSteps = Math.ceil(limit / gap);
+  if (plantsIn(v, bed, start, limit) < qty) return limit;   // 全部使っても足りない
+  let lo = 1, hi = maxSteps;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (plantsIn(v, bed, start, Math.min(mid * gap, limit)) >= qty) hi = mid; else lo = mid + 1;
   }
-  return Math.max(0, limit);
+  return Math.min(lo * gap, limit);
 }
 
 /** その野菜を畝幅に何条植えられるか */
@@ -310,6 +351,15 @@ function planOccupy(p) {
 
 /** ある旬に、その畝がどう使われているか（追加順に畝の先頭から詰める） */
 function bedPacking(bedIndex, dekad) {
+  const c = simCache();
+  const key = 'bp:' + bedIndex + ':' + dekad;
+  if (c[key]) return c[key];
+  const r = bedPackingRaw(bedIndex, dekad);
+  c[key] = r;
+  return r;
+}
+
+function bedPackingRaw(bedIndex, dekad) {
   const s = APP.sim;
   const bed = bedLayout(s).beds[bedIndex];
   const segs = [];
@@ -335,8 +385,23 @@ function bedPacking(bedIndex, dekad) {
    入力フォーム
    --------------------------------------------------------- */
 function simSaveAndRender() {
+  invalidateSimCache();
   Store.set('sim', APP.sim);
   renderSim();
+}
+
+/** その作付けが平面図に写るように、必要なら表示中の旬を移す */
+function focusPlotOn(item) {
+  if (!item) return;
+  const v = byId(item.vegId);
+  if (!v) return;
+  const p = v.plans.find(x => x.id === item.planId);
+  if (!p) return;
+  const [a, e] = planOccupy(p);
+  const when = APP.simWhen === undefined ? APP.nowDek : APP.simWhen;
+  if (inRange(when, a, e)) return;                 // すでに見えている
+  const hv = harvestStep(p);
+  APP.simWhen = hv ? dek(hv.from[0], hv.from[1]) : a;
 }
 
 function initSimForm() {
@@ -393,11 +458,13 @@ function initSimForm() {
   document.getElementById('simAdd').onclick = () => {
     const v = byId(vsel.value);
     const p = v.plans.find(x => x.id === psel.value) || v.plans[0];
-    APP.sim.items.push({
+    const added = {
       vegId: v.id, planId: p.id,
       place: document.getElementById('simPlace').value,
       qty: Math.max(1, parseInt(document.getElementById('simQty').value, 10) || 1)
-    });
+    };
+    APP.sim.items.push(added);
+    focusPlotOn(added);
     simSaveAndRender();
   };
   document.getElementById('simAuto').onclick = () => {
@@ -529,6 +596,14 @@ function presetSim(vegId) {
    検証
    --------------------------------------------------------- */
 function validateSim() {
+  const c = simCache();
+  if (c.warns) return c.warns;
+  const r = validateSimRaw();
+  c.warns = r;
+  return r;
+}
+
+function validateSimRaw() {
   const s = APP.sim;
   const lay = bedLayout(s);
   const warns = [];
@@ -921,7 +996,11 @@ function renderSim() {
     const i = +box2.dataset.editor;
     box2.onclick = ev => ev.stopPropagation();
     box2.querySelectorAll('[data-ed]').forEach(f => {
-      f.onchange = () => { updateItem(i, { [f.dataset.ed]: f.value }); simSaveAndRender(); };
+      f.onchange = () => {
+        updateItem(i, { [f.dataset.ed]: f.value });
+        focusPlotOn(APP.sim.items[i]);
+        simSaveAndRender();
+      };
     });
     const close = box2.querySelector('[data-edclose]');
     if (close) close.onclick = ev => { ev.stopPropagation(); APP.simEdit = null; renderSim(); };
@@ -929,12 +1008,16 @@ function renderSim() {
 
   /* ---- 結果 ---- */
   const box = document.getElementById('simResult');
-  if (!s.items.length) {
-    box.innerHTML = '<div class="empty">作付けを追加するか、「おまかせ年間プランを作る」を押してください。</div>';
-    return;
-  }
 
   let r = '';
+  if (!s.items.length) {
+    r += '<h2 class="sec">④ 畑の平面図</h2>';
+    r += '<div class="empty" style="padding-bottom:6px">まだ作付けがありません。上で追加するか、「おまかせ年間プランを作る」を押してください。</div>';
+    r += '<div id="simPlot"></div>';
+    box.innerHTML = r;
+    renderPlotView();
+    return;
+  }
 
   /* 畑の平面図 */
   r += '<h2 class="sec">④ 畑の平面図</h2>';
@@ -1185,6 +1268,21 @@ function renderPlotSVG(dekad) {
   let html = `<svg viewBox="0 0 ${W} ${H.toFixed(0)}" class="plotsvg" role="img"
      aria-label="畑の平面図">${g}</svg>`;
 
+  /* この旬には畝にいない作付け／描けなかった作付け */
+  const hidden = [];
+  s.items.forEach(it => {
+    const v = byId(it.vegId);
+    if (!v) return;
+    const p = v.plans.find(x => x.id === it.planId);
+    if (!p) return;
+    const [a, e] = planOccupy(p);
+    const bi = parseInt(it.place.slice(3), 10);
+    if (!lay.beds[bi]) return;
+    if (!inRange(dekad, a, e)) { hidden.push({ v: v, from: a, to: e, why: 'time' }); return; }
+    const shown = bedPacking(bi, dekad).segs.some(sg => sg.it === it && sg.len > 0 && sg.start < lay.beds[bi].len);
+    if (!shown) hidden.push({ v: v, from: a, to: e, why: 'full', bed: bi + 1 });
+  });
+
   if (legend.length) {
     html += '<div class="plot-legend">';
     legend.forEach(L => {
@@ -1196,6 +1294,22 @@ function renderPlotSVG(dekad) {
     html += '</div>';
   } else {
     html += '<div class="tiny" style="margin-top:6px">この時期は畝が空いています。</div>';
+  }
+
+  if (hidden.length) {
+    const ht = hidden.filter(h => h.why === 'time');
+    const hf = hidden.filter(h => h.why === 'full');
+    html += '<div class="plot-hidden">';
+    if (ht.length) {
+      html += '<div><b>この時期はまだ畝にありません</b>（スライダーを動かすと見えます）<br>'
+        + ht.map(h => h.v.emoji + ' ' + esc(h.v.name) + '（' + dekLabel(h.from) + '〜）').join('　') + '</div>';
+    }
+    if (hf.length) {
+      html += '<div class="over" style="margin-top:6px"><b>畝に入りきらず、図に出せません</b><br>'
+        + hf.map(h => h.v.emoji + ' ' + esc(h.v.name) + '（畝' + h.bed + '）').join('　')
+        + '<br>前の作付けの株数を減らすか、別の畝へ移してください。</div>';
+    }
+    html += '</div>';
   }
   return html;
 }
